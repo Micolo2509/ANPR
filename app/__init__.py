@@ -1,0 +1,1 @@
+"""Nigerian VNPR application package."""

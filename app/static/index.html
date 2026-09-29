@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VNPR Control Room</title>
+<style>
+:root { --ink:#16232b; --muted:#6f7c82; --paper:#f7f8f5; --line:#e2e7e4; --teal:#0f6b67; --white:#fff; }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; font-family:Georgia, 'Times New Roman', serif; color:var(--ink); background:var(--paper); }
+button, input { font:inherit; } button { cursor:pointer; } .hidden { display:none !important; } .mode-toggle { display:flex; gap:8px; margin-bottom:18px; } .mode-toggle button { padding:10px 16px; border:1px solid var(--line); background:#f5f7f6; color:var(--ink); font:700 11px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; } .mode-toggle button.active { background:var(--teal); color:#fff; border-color:var(--teal); } .live-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:20px; align-items:start; }
+.auth-page { min-height:100vh; display:grid; grid-template-columns:1.05fr .95fr; background:#123d40; }
+.auth-visual { padding:clamp(32px,7vw,96px); color:#f4f3e9; display:flex; flex-direction:column; justify-content:space-between; background:radial-gradient(circle at 70% 20%, #2c7570 0, transparent 34%), #123d40; }
+.brand { font:700 14px/1.2 Arial,sans-serif; letter-spacing:.16em; text-transform:uppercase; }
+.auth-visual h1 { max-width:600px; margin:0; font-size:clamp(3.5rem,7vw,7.5rem); line-height:.9; font-weight:400; letter-spacing:-.04em; }
+.auth-visual p { max-width:390px; color:#b9d8d0; font:16px/1.6 Arial,sans-serif; }
+.visual-mark { width:110px; height:110px; border:1px solid #8cc7bc; border-radius:50%; display:grid; place-items:center; font:700 12px Arial,sans-serif; letter-spacing:.12em; text-align:center; }
+.auth-panel { display:grid; place-items:center; padding:28px; background:#f7f8f5; } .auth-card { width:min(100%,410px); }
+.auth-card h2 { margin:0 0 8px; font-size:42px; font-weight:400; letter-spacing:-.03em; } .auth-card > p { margin:0 0 28px; color:var(--muted); font:15px/1.5 Arial,sans-serif; }
+.auth-tabs { display:flex; gap:22px; border-bottom:1px solid var(--line); margin-bottom:24px; } .auth-tabs button { padding:0 0 12px; border:0; background:none; color:var(--muted); font:700 12px Arial,sans-serif; letter-spacing:.1em; text-transform:uppercase; } .auth-tabs button.active { color:var(--teal); border-bottom:2px solid var(--teal); }
+label { display:block; margin:16px 0 7px; font:700 11px Arial,sans-serif; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); } input { width:100%; padding:14px 0; border:0; border-bottom:1px solid #bfcac6; outline:0; background:transparent; color:var(--ink); } input:focus { border-color:var(--teal); }
+.primary { width:100%; margin-top:26px; padding:15px 18px; border:0; border-radius:3px; background:var(--teal); color:#fff; font:700 12px Arial,sans-serif; letter-spacing:.1em; text-transform:uppercase; } .primary:hover { background:#09534f; }
+.form-message { min-height:20px; margin-top:14px; color:#b54c37; font:13px Arial,sans-serif; }
+.dashboard { min-height:100vh; display:grid; grid-template-columns:230px 1fr; } .sidebar { padding:28px 20px; background:#123d40; color:#f4f3e9; } .sidebar .brand { margin:0 10px 60px; } .nav-label { margin:0 10px 12px; color:#8fb9b0; font:10px Arial,sans-serif; letter-spacing:.14em; text-transform:uppercase; } .nav-button { width:100%; padding:13px 10px; border:0; border-radius:3px; background:transparent; color:#d4e7e2; text-align:left; font:14px Arial,sans-serif; } .nav-button.active, .nav-button:hover { background:#1d5556; color:#fff; } .sidebar-footer { position:fixed; bottom:25px; width:190px; border-top:1px solid #39706c; padding-top:16px; } .admin-name { margin-bottom:12px; font:14px Arial,sans-serif; } .logout { border:0; background:none; padding:0; color:#b9d8d0; font:12px Arial,sans-serif; }
+.content { min-width:0; padding:36px clamp(22px,5vw,72px); } .topbar { display:flex; justify-content:space-between; gap:20px; align-items:start; margin-bottom:44px; } .eyebrow { color:var(--teal); font:700 11px Arial,sans-serif; letter-spacing:.13em; text-transform:uppercase; } .topbar h1 { margin:8px 0 0; font-size:clamp(34px,4vw,58px); font-weight:400; letter-spacing:-.04em; } .date { color:var(--muted); font:13px Arial,sans-serif; }
+.view { display:none; } .view.active { display:block; } .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:34px; } .stat { padding:20px; border:1px solid var(--line); background:#fff; } .stat small { color:var(--muted); font:11px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; } .stat strong { display:block; margin-top:12px; font-size:36px; font-weight:400; }
+.view:not(.active) { display:none !important; }
+.panel { padding:25px; border:1px solid var(--line); background:#fff; } .panel-head { display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:18px; } .panel h2 { margin:0; font-size:22px; font-weight:400; } .text-button { border:0; background:none; color:var(--teal); font:700 11px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; }
+.dropzone { display:grid; place-items:center; min-height:180px; border:1px dashed #a8beb8; background:#f8faf7; text-align:center; } .dropzone p { margin:0; color:var(--muted); font:14px Arial,sans-serif; } .dropzone input { width:auto; border:0; margin-top:14px; } .camera-controls { display:flex; justify-content:center; gap:10px; margin-top:18px; } .camera-controls button { width:auto; margin:0; } #camera { display:none; width:100%; max-height:360px; margin-top:18px; border:1px solid var(--line); background:#16232b; object-fit:cover; } .camera-status { min-height:18px; margin:10px 0 0; color:var(--muted); font:12px Arial,sans-serif; }
+.result { margin-top:18px; padding:24px; border:1px solid #245f5c; background:linear-gradient(135deg,#123d40,#185251); color:#f4f3e9; box-shadow:0 12px 28px rgba(18,61,64,.12); } .result-top { display:flex; justify-content:space-between; align-items:start; gap:18px; } .result-label { color:#a9d0c6; font:700 10px Arial,sans-serif; letter-spacing:.14em; text-transform:uppercase; } .result-status { padding:6px 9px; border:1px solid rgba(242,180,107,.5); border-radius:999px; color:#f7c98e; font:700 10px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; } .plate { margin-top:8px; color:#f2b46b; font:400 clamp(30px,5vw,44px)/1 Georgia,'Times New Roman',serif; letter-spacing:.03em; } .result-meta { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:22px; } .result-meta div { padding:12px 14px; border:1px solid rgba(169,208,198,.22); background:rgba(4,30,31,.18); } .result-meta span { display:block; color:#a9d0c6; font:10px Arial,sans-serif; letter-spacing:.1em; text-transform:uppercase; } .result-meta strong { display:block; margin-top:7px; color:#fff; font:400 17px Georgia,'Times New Roman',serif; overflow-wrap:anywhere; } .result-confidence { margin-top:18px; } .result-confidence-head { display:flex; justify-content:space-between; gap:12px; color:#a9d0c6; font:11px Arial,sans-serif; } .result-confidence-track { height:7px; margin-top:8px; overflow:hidden; border-radius:99px; background:rgba(244,243,233,.18); } .result-confidence-track span { display:block; height:100%; width:0; border-radius:inherit; background:#f2b46b; transition:width .35s ease; } .result-raw { margin-top:18px; border-top:1px solid rgba(169,208,198,.22); padding-top:12px; } .result-raw summary { cursor:pointer; color:#a9d0c6; font:700 10px Arial,sans-serif; letter-spacing:.1em; text-transform:uppercase; } .result-raw pre { margin-bottom:0; color:#d9ebe6; } pre { max-width:100%; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.5 Consolas,monospace; }
+table { width:100%; border-collapse:collapse; font:13px Arial,sans-serif; } th, td { padding:14px 8px; border-bottom:1px solid var(--line); text-align:left; overflow-wrap:anywhere; } th { color:var(--muted); font-size:10px; letter-spacing:.08em; text-transform:uppercase; } .status { font:700 11px Arial,sans-serif; letter-spacing:.04em; text-transform:uppercase; } .status.verified { color:#0f6b67; } .status.unverified { color:#b54c37; } .empty { color:var(--muted); text-align:center; }
+@media (max-width:760px) { .auth-page { grid-template-columns:1fr; } .auth-visual { min-height:270px; padding:28px; } .auth-visual h1 { font-size:56px; } .visual-mark, .auth-visual p { display:none; } .dashboard { display:block; } .sidebar { padding:18px; } .sidebar .brand { margin:0 0 18px; } .nav-label { display:none; } .nav-button { width:auto; margin-right:8px; padding:9px; } .sidebar-footer { position:static; width:auto; margin-top:15px; padding-top:12px; } .content { padding:28px 18px; } .stats { grid-template-columns:1fr; } .topbar { margin-bottom:28px; } .result { padding:20px; } .result-top { display:block; } .result-status { display:inline-block; margin-top:12px; } .result-meta { grid-template-columns:1fr; } }
+ .history-table-wrap { overflow-x:auto; } .history-table-wrap table { min-width:680px; }
+.detection-panel { margin-top:18px; }
+.detection-stage { position:relative; width:100%; overflow:hidden; background:#16232b; }
+.detection-stage img { display:block; width:100%; height:auto; max-height:520px; object-fit:contain; }
+.detection-stage canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.detection-placeholder { display:grid; min-height:180px; place-items:center; padding:24px; color:#8fb9b0; text-align:center; font:14px/1.5 Arial,sans-serif; }
+.detection-details { display:grid; gap:10px; margin-top:16px; }
+.detection-item { padding:14px 16px; border-left:3px solid #f2b46b; background:#123d40; color:#f4f3e9; }
+.detection-item strong { display:block; margin-bottom:7px; color:#f2b46b; font:700 20px Georgia,'Times New Roman',serif; }
+.detection-item span { color:#b9d8d0; font:12px Arial,sans-serif; }
+.detection-message { margin:14px 0 0; color:var(--muted); font:13px Arial,sans-serif; }
+.confidence-bar { position:relative; display:inline-block; width:100%; height:10px; border:1px solid var(--line); border-radius:99px; overflow:hidden; background:#eff4f2; }
+.confidence-bar > span { position:absolute; inset:0 auto 0 0; display:block; border-radius:99px; background:linear-gradient(90deg, #0f6b67, #f2b46b); }
+.live-track-details { margin-top:16px; padding:16px; border:1px solid var(--line); background:#fff; }
+.live-track-details h3 { margin:0 0 12px; font-size:18px; font-weight:400; }
+.live-track-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 14px; margin-bottom:14px; font:12px Arial,sans-serif; color:var(--muted); }
+.live-track-detail-grid strong { color:var(--ink); }
+.live-history-list { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.live-history-list li { padding:8px 10px; border:1px solid var(--line); background:#f8faf7; font:12px Arial,sans-serif; color:var(--ink); }
+.live-history-empty { color:var(--muted); font:12px Arial,sans-serif; }
+.analytics-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.analytics-card { padding:18px; border:1px solid var(--line); background:#f8faf7; }
+.analytics-card h3 { margin:0 0 12px; font:700 12px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.traffic-zone-editor, .traffic-citation-editor { position:relative; margin-top:18px; padding:24px; border:1px solid #cddbd6; background:#fff; box-shadow:0 10px 24px rgba(22,35,43,.06); }
+#trafficView > .analytics-card:has(#trafficStopLine) { border-top:3px solid var(--teal); }
+#trafficView > .analytics-card:has(#editCitationId) { border-top:3px solid #d8894b; }
+#trafficView > .analytics-card h3 { margin-bottom:8px; color:var(--ink); font:400 23px/1.2 Georgia,'Times New Roman',serif; letter-spacing:-.02em; text-transform:none; }
+#trafficView > .analytics-card > .empty { margin:0 0 18px; text-align:left; font-size:12px; }
+#trafficView > .analytics-card .manager-grid { gap:18px 24px; }
+#trafficView > .analytics-card label { margin-top:14px; color:#5f716f; }
+#trafficView > .analytics-card input, #trafficView > .analytics-card select { width:100%; min-height:42px; padding:10px 12px; border:1px solid #c8d5d1; border-radius:4px; background:#fbfcfb; color:var(--ink); font:13px Arial,sans-serif; transition:border-color .2s,box-shadow .2s,background .2s; }
+#trafficView > .analytics-card input:focus, #trafficView > .analytics-card select:focus { border-color:var(--teal); background:#fff; box-shadow:0 0 0 3px rgba(15,107,103,.12); }
+#trafficView > .analytics-card input::placeholder { color:#9aa9a5; }
+#trafficView > .analytics-card:has(#trafficStopLine) input:not([type="checkbox"]) { font:12px/1.4 Consolas,monospace; }
+#trafficView > .analytics-card:has(#editCitationId) input { font-size:13px; }
+#trafficView > .analytics-card input[type="checkbox"] { width:16px; min-height:16px; margin:0 7px 0 0; padding:0; accent-color:var(--teal); vertical-align:-3px; }
+#trafficView > .analytics-card label:has(input[type="checkbox"]) { display:flex; align-items:center; gap:2px; padding:10px 12px; border:1px solid #d7e2de; border-radius:4px; background:#f7faf8; color:var(--ink); font-size:11px; }
+#trafficView > .analytics-card .primary { width:auto; min-width:180px; margin-top:22px; }
+#trafficCameraMessage, #citationEditMessage { min-height:18px; margin-top:12px; text-align:left; }
+#trafficView > .analytics-card:has(#editCitationId) { background:linear-gradient(145deg,#fff,#fffaf5); }
+.analytics-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0 0 18px; }
+.analytics-summary .stat { min-height:130px; }
+.analytics-list { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.analytics-list li { display:flex; justify-content:space-between; gap:12px; padding:8px 10px; border:1px solid var(--line); background:#fff; font:12px Arial,sans-serif; }
+.analytics-list .label { color:var(--ink); }
+.analytics-list .value { color:var(--teal); font-weight:700; }
+.analytics-bar { display:flex; align-items:center; gap:8px; font:12px Arial,sans-serif; }
+.analytics-bar span:first-child { min-width:92px; color:var(--muted); }
+.analytics-bar-track { flex:1; height:10px; border:1px solid var(--line); background:#edf1ef; border-radius:999px; overflow:hidden; }
+.analytics-bar-track i { display:block; height:100%; background:linear-gradient(90deg, #0f6b67, #f2b46b); border-radius:999px; }
+.alerts-panel { margin-top:18px; }
+.alert-item { display:flex; justify-content:space-between; gap:16px; padding:12px 14px; border:1px solid var(--line); background:#fff; } 
+.alert-item strong { display:block; font-size:18px; } 
+.alert-item .meta { color:var(--muted); font:12px Arial,sans-serif; }
+.alert-badge { padding:5px 8px; border-radius:999px; font:700 10px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; }
+.alert-badge.high { background:#fbe4e1; color:#b54c37; }
+.alert-badge.medium { background:#f6efdc; color:#9a6d1b; }
+.alert-badge.low { background:#e4f2ee; color:#0f6b67; }
+.manager-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.manager-grid label { margin:12px 0 8px; }
+.manager-grid select { width:100%; padding:12px 10px; border:1px solid var(--line); background:#fff; color:var(--ink); }
+.vehicle-profile { margin-top:18px; padding:16px; border:1px solid var(--line); background:#f8faf7; }
+.vehicle-profile h3 { margin:0 0 12px; font-size:18px; font-weight:400; }
+.vehicle-profile-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 16px; font:12px Arial,sans-serif; color:var(--muted); }
+.vehicle-profile-grid strong { color:var(--ink); }
+.vehicle-profile-list { list-style:none; margin:12px 0 0; padding:0; display:grid; gap:8px; }
+.vehicle-profile-list li { padding:8px 10px; border:1px solid var(--line); background:#fff; font:12px Arial,sans-serif; }
+@media (max-width:760px) { .analytics-grid, .analytics-summary, .manager-grid, .vehicle-profile-grid { grid-template-columns:1fr; } }
+@media (max-width:760px) { #trafficView > .analytics-card { padding:18px; } #trafficView > .analytics-card .primary { width:100%; } }
+
+/* Modern dashboard surface */
+:root { --ink:#17252b; --muted:#718086; --paper:#eef3f1; --line:#dbe5e1; --teal:#0b716b; --teal-deep:#073f43; --mint:#dff0eb; --white:#fff; --shadow:0 16px 40px rgba(26,54,57,.08); }
+body { font-family:"Aptos","Segoe UI",sans-serif; background:radial-gradient(circle at 88% 0%, #d9eee8 0, transparent 28%), var(--paper); color:var(--ink); }
+button, input, select { font-family:"Aptos","Segoe UI",sans-serif; }
+.auth-page { background:var(--teal-deep); }
+.auth-visual { background:radial-gradient(circle at 80% 18%, rgba(91,190,166,.34), transparent 30%), linear-gradient(145deg,#073f43,#0d6969); }
+.auth-visual h1 { font-family:"Aptos Display","Segoe UI",sans-serif; font-weight:700; letter-spacing:-.06em; line-height:.95; }
+.auth-panel { background:#f5f8f6; }
+.auth-card { padding:36px; border:1px solid rgba(219,229,225,.85); border-radius:18px; background:rgba(255,255,255,.78); box-shadow:var(--shadow); }
+.auth-card h2 { font-family:"Aptos Display","Segoe UI",sans-serif; font-weight:700; letter-spacing:-.045em; }
+.auth-tabs { gap:26px; }
+.auth-tabs button { font-size:11px; }
+label { font-size:10px; letter-spacing:.12em; }
+input, select { border-radius:8px; }
+.primary { border-radius:9px; background:var(--teal); box-shadow:0 8px 16px rgba(11,113,107,.18); transition:transform .2s,box-shadow .2s,background .2s; }
+.primary:hover { background:#095c58; box-shadow:0 10px 20px rgba(11,113,107,.24); transform:translateY(-1px); }
+.dashboard { grid-template-columns:252px 1fr; }
+.sidebar { padding:30px 18px; background:linear-gradient(180deg,#073f43 0%,#0b5759 100%); box-shadow:10px 0 30px rgba(7,63,67,.12); }
+.sidebar .brand { margin:0 12px 54px; font-size:12px; }
+.nav-label { margin-left:12px; color:#8ccfc0; }
+.nav-button { margin:3px 0; padding:13px 14px; border-radius:9px; font-size:13px; transition:background .2s,color .2s,transform .2s; }
+.nav-button.active, .nav-button:hover { background:rgba(173,230,215,.14); color:#fff; transform:translateX(2px); }
+.sidebar-footer { width:216px; border-color:rgba(174,226,213,.25); }
+.content { padding:42px clamp(24px,5vw,76px); }
+.topbar { margin-bottom:38px; align-items:end; }
+.eyebrow { color:var(--teal); font-size:10px; letter-spacing:.16em; }
+.topbar h1 { font-family:"Aptos Display","Segoe UI",sans-serif; font-size:clamp(34px,4vw,52px); font-weight:700; letter-spacing:-.055em; }
+.date { padding:9px 12px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.6); font-size:12px; }
+.stats, .analytics-summary { gap:16px; }
+.stat, .panel, .live-track-details, .analytics-card, .traffic-zone-editor, .traffic-citation-editor { border-color:rgba(205,219,214,.9); border-radius:14px; box-shadow:var(--shadow); }
+.stat { padding:22px; background:rgba(255,255,255,.88); }
+.stat small { font-size:10px; letter-spacing:.12em; }
+.stat strong { font-family:"Aptos Display","Segoe UI",sans-serif; font-weight:700; letter-spacing:-.04em; }
+.panel { padding:26px; background:rgba(255,255,255,.92); }
+.panel-head { margin-bottom:22px; }
+.panel h2 { font-family:"Aptos Display","Segoe UI",sans-serif; font-size:20px; font-weight:700; letter-spacing:-.03em; }
+.mode-toggle button { border-radius:999px; }
+.dropzone { min-height:190px; border-radius:12px; background:linear-gradient(145deg,#f8fbf9,#edf6f2); }
+.result { border-radius:14px; }
+.detection-panel { overflow:hidden; }
+.detection-stage { border-radius:10px; }
+.detection-item { border-radius:9px; }
+table { font-size:12px; }
+th { padding-bottom:12px; }
+td { padding:15px 8px; }
+.text-button { border-radius:6px; padding:7px 9px; transition:background .2s,color .2s; }
+.text-button:hover { background:var(--mint); color:var(--teal-deep); }
+.analytics-card { background:rgba(255,255,255,.82); }
+.traffic-zone-editor, .traffic-citation-editor { background:rgba(255,255,255,.92); }
+@media (max-width:760px) { .auth-card { padding:24px; border-radius:14px; } .dashboard { display:block; } .sidebar { box-shadow:none; } .content { padding:26px 16px; } .topbar { align-items:start; } .date { font-size:11px; } }
+
+/* Responsive dashboard layout */
+html, body { max-width:100%; overflow-x:hidden; }
+img, canvas, video { max-width:100%; }
+.mobile-menu-toggle { display:none; }
+.panel, .analytics-card, .stat, .traffic-zone-editor, .traffic-citation-editor { min-width:0; }
+.panel-head { flex-wrap:wrap; }
+.live-grid { min-width:0; }
+#liveStream { display:block; width:100% !important; max-width:100%; height:auto; max-height:none; aspect-ratio:16 / 9; object-fit:contain; }
+.camera-controls { flex-wrap:wrap; }
+#mobileVideo { display:block; width:100%; max-width:100%; height:auto; max-height:520px; aspect-ratio:16 / 9; object-fit:contain; border:1px solid var(--line); background:#16232b; }
+.mobile-video-stage { position:relative; width:100%; overflow:hidden; background:#16232b; }
+.mobile-video-stage canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.mobile-live-source-toggle { display:flex; gap:8px; margin-bottom:18px; }
+.mobile-live-source-toggle button { padding:10px 16px; border:1px solid var(--line); border-radius:999px; background:#f5f7f6; color:var(--ink); font:700 11px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; }
+.mobile-live-source-toggle button.active { background:var(--teal); color:#fff; border-color:var(--teal); }
+.mobile-camera-panel { min-width:0; }
+.camera-controls button, .dropzone .primary, .manager-grid .primary { min-height:44px; }
+.dropzone input[type="file"] { max-width:100%; }
+.history-table-wrap { max-width:100%; -webkit-overflow-scrolling:touch; }
+
+@media (max-width:1024px) {
+  .content { padding:30px clamp(18px,4vw,42px); }
+  .live-grid { grid-template-columns:1fr; }
+  .stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .analytics-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .sidebar-footer { width:auto; }
+}
+
+@media (max-width:760px) {
+  .mobile-menu-toggle { display:block; width:100%; min-height:44px; margin:0 0 14px; padding:10px 12px; border:1px solid rgba(174,226,213,.35); border-radius:9px; background:rgba(173,230,215,.12); color:#fff; text-align:left; font:700 12px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; }
+  .sidebar { padding:16px; }
+  .sidebar:not(.nav-open) .nav-label, .sidebar:not(.nav-open) .nav-button { display:none; }
+  .sidebar .nav-button { display:block; width:100%; min-height:44px; margin:3px 0; padding:12px 14px; }
+  .sidebar-footer { margin-top:14px; }
+  .content { padding:24px 14px; }
+  .topbar { gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+  .topbar h1 { font-size:clamp(30px,9vw,42px); overflow-wrap:anywhere; }
+  .date { max-width:100%; overflow-wrap:anywhere; }
+  .stats, .analytics-summary, .analytics-grid, .manager-grid, .vehicle-profile-grid { grid-template-columns:1fr; }
+  .stat strong { font-size:32px; overflow-wrap:anywhere; }
+  .panel, .analytics-card, .traffic-zone-editor, .traffic-citation-editor { padding:18px; }
+  .mode-toggle { display:grid; grid-template-columns:1fr 1fr; }
+  .mode-toggle button { min-height:44px; padding:10px 8px; }
+  .dropzone { min-height:160px; padding:20px 14px; }
+  .camera-controls { display:grid; grid-template-columns:1fr; }
+  .camera-controls button { width:100%; }
+  .mobile-live-source-toggle { display:grid; grid-template-columns:1fr 1fr; }
+  .mobile-live-source-toggle button { min-height:44px; padding:10px 8px; }
+  .result, .detection-item { overflow-wrap:anywhere; }
+  .result-meta { grid-template-columns:1fr; }
+  .live-track-detail-grid { grid-template-columns:1fr; }
+  .panel-head .text-button { min-height:40px; }
+  .history-table-wrap table { min-width:680px; }
+}
+
+@media (max-width:480px) {
+  .auth-visual { min-height:220px; padding:22px; }
+  .auth-visual h1 { font-size:46px; }
+  .auth-panel { padding:14px; }
+  .auth-card { padding:20px; }
+  .content { padding:20px 12px; }
+  .panel, .analytics-card, .traffic-zone-editor, .traffic-citation-editor { padding:15px; border-radius:11px; }
+  .panel h2 { font-size:19px; }
+  .result { padding:16px; }
+  .plate { font-size:32px; overflow-wrap:anywhere; }
+}
+
+/* Operator-focused recognition result */
+:root { --teal:#155e9a; --teal-deep:#12395f; --mint:#e7f1fb; --paper:#f3f7fc; --line:#d9e3ef; --ink:#17283d; }
+body { background:radial-gradient(circle at 88% 0%,#e2eefb 0,transparent 28%),var(--paper); }
+.sidebar { background:linear-gradient(180deg,#12395f 0%,#155e9a 100%); }
+.auth-page { background:#12395f; }
+.auth-visual { background:linear-gradient(145deg,#12395f,#1f6eaa); }
+.result { min-width:0; margin-top:0; padding:22px; border:1px solid #cbdced; border-radius:10px; background:#fff; color:var(--ink); box-shadow:0 12px 28px rgba(24,67,112,.09); }
+.result-top { display:flex; justify-content:space-between; align-items:center; gap:14px; }
+.result-label { color:#54708d; font-size:10px; letter-spacing:.14em; }
+.result-status { max-width:48%; padding:6px 9px; border:1px solid #cbdced; border-radius:4px; background:#edf5fd; color:#155e9a; font:700 11px/1.2 "Aptos","Segoe UI",sans-serif; letter-spacing:0; text-align:center; text-transform:none; white-space:normal; }
+.plate { margin-top:15px; color:#12395f; font:700 clamp(38px,5vw,58px)/1.05 "Aptos Display","Segoe UI",sans-serif; letter-spacing:0; overflow-wrap:anywhere; }
+.dropzone { border-color:#b8cde3; background:linear-gradient(145deg,#fff,#f1f7fd); }
+.recognition-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:18px; }
+.recognition-field { min-width:0; padding:11px 12px; border:1px solid #e0e9f2; border-radius:6px; background:#f7faff; }
+.recognition-field span { display:block; color:#61768c; font:700 10px/1.3 "Aptos","Segoe UI",sans-serif; text-transform:uppercase; }
+.recognition-field strong { display:block; margin-top:6px; color:#17283d; font:600 16px/1.35 "Aptos","Segoe UI",sans-serif; overflow-wrap:anywhere; }
+.recognition-field.registration { grid-column:1 / -1; }
+.registration-badge { display:inline-flex !important; width:max-content; max-width:100%; align-items:center; padding:5px 9px; border:1px solid #a8ddc2; border-radius:4px; background:#eaf8f0; color:#176b43 !important; font:700 11px/1.2 "Aptos","Segoe UI",sans-serif !important; overflow-wrap:anywhere; }
+.registration-badge.unregistered { border-color:#efc6c1; background:#fff0ee; color:#a53932 !important; }
+.registration-badge.unknown { border-color:#d6e0eb; background:#f1f5f9; color:#5b6e81 !important; }
+.result-raw { margin-top:16px; border-top:1px solid #e0e9f2; padding-top:12px; }
+.result-raw summary, .vehicle-details summary { min-height:42px; display:flex; align-items:center; color:#365878; font:700 11px "Aptos","Segoe UI",sans-serif; letter-spacing:.06em; text-transform:uppercase; }
+.result-raw pre { color:#334e68; font:12px/1.5 Consolas,monospace; }
+.vehicle-tools { min-width:0; margin-top:12px; border:1px solid #d9e3ef; border-radius:7px; background:#f8fbff; }
+.vehicle-details { margin:14px 0 0; border:1px solid #d9e3ef; border-radius:7px; background:#f8fbff; }
+.vehicle-details summary, .result-raw summary { padding:0 12px; cursor:pointer; }
+.vehicle-details[open] { padding-bottom:14px; }
+.vehicle-details > .manager-grid, .vehicle-details > .vehicle-profile { margin-right:14px; margin-left:14px; }
+.vehicle-details > .recognition-vehicle-facts { margin:0 14px 14px; }
+.vehicle-details .primary { width:100%; min-height:44px; margin:12px 14px 0; }
+.recognition-vehicle-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.recognition-vehicle-facts div { min-width:0; padding:10px 12px; border:1px solid #e0e9f2; border-radius:5px; background:#fff; color:#61768c; font:12px/1.4 "Aptos","Segoe UI",sans-serif; overflow-wrap:anywhere; }
+.recognition-vehicle-facts strong { display:block; margin-bottom:4px; color:#365878; font-size:10px; text-transform:uppercase; }
+.vehicle-profile { margin-top:14px; }
+.vehicle-profile-grid { overflow-wrap:anywhere; }
+#overviewView.recognition-active { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr); grid-template-areas:"stats stats" "source result" "detection detection" "alerts alerts"; gap:16px; align-items:start; }
+#overviewView.recognition-active > .stats { grid-area:stats; margin-bottom:0; }
+#overviewView.recognition-active > .panel:not(.detection-panel):not(.alerts-panel) { grid-area:source; }
+#overviewView.recognition-active > #result { grid-area:result; }
+#overviewView.recognition-active > .detection-panel { grid-area:detection; margin-top:0; }
+#overviewView.recognition-active > .alerts-panel { grid-area:alerts; margin-top:0; }
+@media (max-width:760px) {
+  #overviewView.recognition-active { display:block; }
+  #overviewView.recognition-active > .panel, #overviewView.recognition-active > .stat, #overviewView.recognition-active > #result { margin-bottom:16px; }
+  .result { margin-top:16px; padding:18px; }
+  .recognition-fields { grid-template-columns:1fr; }
+  .recognition-field.registration { grid-column:auto; }
+  .result-top { align-items:flex-start; }
+  .result-status { max-width:58%; }
+  .recognition-vehicle-facts { grid-template-columns:1fr; }
+  .vehicle-details .primary { width:calc(100% - 28px); }
+}
+</style>
+</head>
+<body>
+<section id="authPage" class="auth-page"><div class="auth-visual"><div class="brand">VNPR / Control Room</div><div><h1>Know what<br>moves.</h1><p>Private vehicle intelligence for a clearer, faster view of every plate that passes through your operation.</p></div><div class="visual-mark">ADMIN<br>ACCESS</div></div><div class="auth-panel"><div class="auth-card"><div class="auth-tabs"><button id="loginTab" class="active" type="button">Sign in</button><button id="signupTab" type="button">Create admin</button></div><h2 id="authTitle">Welcome back.</h2><p id="authSubtitle">Sign in to access your recognition dashboard.</p><form id="authForm"><div id="nameField" class="hidden"><label for="name">Full name</label><input id="name" autocomplete="name"></div><label for="email">Email address</label><input id="email" type="email" autocomplete="email" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" minlength="8" required><button class="primary" type="submit" id="authSubmit">Sign in</button><div class="form-message" id="authMessage" role="alert"></div></form></div></div></section>
+<section id="dashboard" class="dashboard hidden"><aside class="sidebar"><div class="brand">VNPR / Control Room</div><div class="nav-label">Workspace</div><button class="nav-button active" data-view="overview" type="button">Overview</button><button class="nav-button" data-view="analytics" type="button">Analytics</button><button class="nav-button" data-view="history" type="button">Recognition history</button><div class="sidebar-footer"><div class="admin-name" id="adminName"></div><button class="logout" id="logout" type="button">Sign out</button></div></aside><main class="content"><div class="topbar"><div><div class="eyebrow">Admin dashboard</div><h1 id="viewTitle">Overview</h1></div><div class="date" id="today"></div></div><section class="view active" id="overviewView"><div class="stats"><div class="stat"><small>Total recognitions</small><strong id="totalCount">0</strong></div><div class="stat"><small>Latest plate</small><strong id="latestPlate">-</strong></div><div class="stat"><small>Latest make</small><strong id="latestMake">-</strong></div></div><div class="panel"><div class="panel-head"><h2>Recognize a vehicle</h2></div><div class="mode-toggle"><button class="active" id="imageModeButton" type="button">Image upload</button><button id="liveModeButton" type="button">Live camera</button></div><div id="imageMode"><div class="dropzone"><div><p>Upload a vehicle image to scan its plate and make</p><input id="file" type="file" accept="image/*"><button class="primary" id="recognize" type="button">Run recognition</button></div></div></div><div id="liveMode" class="hidden"><div class="live-grid"><div><img id="liveStream" alt="Live camera feed" class="hidden" style="width:100%;max-height:420px;border:1px solid var(--line);background:#16232b;object-fit:cover;"><div class="camera-controls"><button class="primary" id="startCamera" type="button">Start live camera</button><button class="text-button" id="stopCamera" type="button" disabled>Stop camera</button></div><p class="camera-status" id="cameraStatus">Camera is off</p></div><div><div class="stat" style="margin-bottom:12px;"><small>Vehicles tracked</small><strong id="liveVehicleCount">0</strong></div><div class="stat" style="margin-bottom:12px;"><small>Plates recognized</small><strong id="livePlateCount">0</strong></div><div class="panel" style="padding:14px 16px;"><table><thead><tr><th>Track ID</th><th>Plate</th><th>Confidence</th><th>Status</th></tr></thead><tbody id="liveTracksBody"><tr><td colspan="4" class="empty">No vehicles detected yet.</td></tr></tbody></table><div id="liveTrackDetails" class="live-track-details hidden"><h3>Vehicle details</h3><div id="liveTrackDetailContent"></div></div></div></div></div></div></div><div class="result hidden" id="result"><div class="result-label">Latest result</div><div class="plate" id="plate">-</div><pre id="out"></pre></div></div></section><section class="view" id="historyView"><div class="panel"><div class="panel-head"><h2>Recognition history</h2><button class="text-button" id="refreshHistory" type="button">Refresh</button></div><table><thead><tr><th>Time</th><th>Plate</th><th>Make</th><th>Model</th></tr></thead><tbody id="historyRows"><tr><td colspan="4" class="empty">Loading history...</td></tr></tbody></table><p id="historyStatus" class="date"></p></div></section></main></section>
+<script>
+const $ = selector => document.querySelector(selector); let authMode = 'login';
+let cameraStream = null; let cameraTimer = null; let cameraProcessing = false; let detectionImageUrl = null; let latestDetection = null; let selectedLiveTrackId = null;
+const detectionPanel = document.createElement('section'); detectionPanel.className = 'panel detection-panel'; detectionPanel.innerHTML = '<div class="panel-head"><h2>Detection Result</h2></div><div class="detection-stage"><div class="detection-placeholder" id="detectionPlaceholder">Run recognition to view the source image and detected plate.</div><img id="detectionImage" class="hidden" alt="Recognized vehicle image"><canvas id="detectionCanvas" class="hidden"></canvas></div><div class="detection-message" id="detectionMessage"></div><div class="detection-details" id="detectionDetails"></div>'; document.querySelector('#overviewView .panel').after(detectionPanel);
+const alertsPanel = document.createElement('section'); alertsPanel.className = 'panel alerts-panel'; alertsPanel.innerHTML = '<div class="panel-head"><h2>Priority alerts</h2></div><div id="alertsList"></div>'; detectionPanel.after(alertsPanel);
+const vehiclePanel = document.createElement('section'); vehiclePanel.className = 'panel alerts-panel'; vehiclePanel.innerHTML = `
+  <div class="panel-head"><h2>Vehicle status manager</h2></div>
+  <details class="vehicle-details">
+    <summary>Vehicle Details</summary>
+  <div class="manager-grid">
+    <div>
+      <label for="vehiclePlateInput">Plate number</label>
+      <input id="vehiclePlateInput" placeholder="ABC-123AB">
+      <button class="primary" id="lookupVehicleButton" type="button" style="margin-top:14px;">Lookup profile</button>
+    </div>
+    <div>
+      <label for="vehicleStatusSelect">Status</label>
+      <select id="vehicleStatusSelect">
+        <option value="clear">Clear</option>
+        <option value="flagged">Flagged</option>
+        <option value="stolen">Stolen</option>
+        <option value="unregistered">Unregistered</option>
+      </select>
+      <label for="vehicleStatusReason">Status reason</label>
+      <input id="vehicleStatusReason" placeholder="Owner report or police notice">
+    </div>
+  </div>
+  <div class="manager-grid" style="margin-top:14px;">
+    <div>
+      <label for="vehicleAmountInput">Outstanding amount</label>
+      <input id="vehicleAmountInput" type="number" step="0.01" min="0" placeholder="0.00">
+    </div>
+    <div>
+      <label for="vehicleAmountReason">Obligation note</label>
+      <input id="vehicleAmountReason" placeholder="Road tax arrears">
+    </div>
+  </div>
+  <div class="vehicle-profile" id="vehicleProfileResult"></div>
+  </details>
+  <button class="primary" id="saveVehicleStatusButton" type="button" style="margin-top:16px;">Save vehicle record</button>
+`; alertsPanel.after(vehiclePanel);
+const detectionImage = $('#detectionImage'); const detectionCanvas = $('#detectionCanvas');
+const resultContainer = $('#result'); const rawResult = $('#out'); const resultPlate = $('#plate');
+let latestRecognitionData = null;
+let latestVehicleProfile = null;
+const resultLabel = resultContainer.querySelector('.result-label');
+const resultHeader = document.createElement('div'); resultHeader.className = 'result-top';
+resultLabel.textContent = 'Latest recognition';
+resultHeader.append(resultLabel);
+const resultStatus = document.createElement('div'); resultStatus.className = 'result-status'; resultStatus.id = 'recognitionStatus'; resultStatus.textContent = 'Waiting for recognition'; resultHeader.append(resultStatus);
+const resultFields = document.createElement('div'); resultFields.className = 'recognition-fields';
+function addRecognitionField(label, id, extraClass = '') { const field = document.createElement('div'); field.className = `recognition-field ${extraClass}`.trim(); const caption = document.createElement('span'); caption.textContent = label; const value = document.createElement('strong'); value.id = id; value.textContent = 'Unavailable'; field.append(caption, value); resultFields.append(field); }
+addRecognitionField('Vehicle make', 'recognitionMake');
+addRecognitionField('Detection confidence', 'recognitionDetection');
+addRecognitionField('OCR confidence', 'recognitionOcr');
+addRecognitionField('Registration status', 'recognitionRegistration', 'registration');
+resultFields.querySelector('#recognitionRegistration').classList.add('registration-badge', 'unknown');
+const debugDetails = document.createElement('details'); debugDetails.className = 'result-raw';
+const debugSummary = document.createElement('summary'); debugSummary.textContent = 'Debug Details'; debugDetails.append(debugSummary, rawResult);
+debugDetails.addEventListener('toggle', () => { rawResult.textContent = debugDetails.open && latestRecognitionData ? JSON.stringify(latestRecognitionData, null, 2) : ''; });
+rawResult.textContent = '';
+const vehicleDetails = vehiclePanel.querySelector('.vehicle-details');
+vehicleDetails.classList.add('recognition-vehicle-details');
+vehicleDetails.querySelector('summary').textContent = 'Vehicle Details';
+const vehicleFacts = document.createElement('div'); vehicleFacts.className = 'recognition-vehicle-facts'; vehicleFacts.id = 'recognitionVehicleFacts';
+vehicleDetails.querySelector('summary').after(vehicleFacts);
+vehicleDetails.append($('#saveVehicleStatusButton'));
+resultContainer.append(resultHeader, resultPlate, resultFields, vehicleDetails, debugDetails);
+vehiclePanel.remove();
+function confidenceLabel(value) { if (value == null || value === '') return 'Unavailable'; const confidence = Number(value); if (!Number.isFinite(confidence)) return 'Unavailable'; return `${(confidence <= 1 ? confidence * 100 : confidence).toFixed(1)}%`; }
+function setRegistrationBadge(registered) { const badge = $('#recognitionRegistration'); badge.classList.remove('unknown', 'unregistered'); if (registered === true) { badge.textContent = 'REGISTERED'; } else if (registered === false) { badge.textContent = 'UNREGISTERED'; badge.classList.add('unregistered'); } else { badge.textContent = 'NOT CHECKED'; badge.classList.add('unknown'); } }
+function renderVehicleFacts(result = {}, profile = latestVehicleProfile) { const facts = []; const resultPlate = result.plate_number || result.plate_text || result.text; const profilePlate = profile && (profile.plate_text || profile.plate_number); const normalizePlate = value => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); const profileMatches = !resultPlate || !profilePlate || normalizePlate(resultPlate) === normalizePlate(profilePlate); const matchedProfile = profileMatches ? profile : null; const plate = resultPlate || profilePlate; const make = result.vehicle_make || result.make || matchedProfile && matchedProfile.vehicle_make; const registration = typeof result.is_registered === 'boolean' ? result.is_registered : typeof matchedProfile?.is_registered === 'boolean' ? matchedProfile.is_registered : null; const owner = result.owner || result.owner_name || matchedProfile && (matchedProfile.owner || matchedProfile.owner_name); const vehicleType = result.vehicle_type || matchedProfile && matchedProfile.vehicle_type; const amount = matchedProfile && (matchedProfile.outstanding_amount ?? matchedProfile.amount_owed); const obligations = matchedProfile && Array.isArray(matchedProfile.obligations) ? matchedProfile.obligations : []; const obligation = matchedProfile && (matchedProfile.obligation_note || obligations.map(item => item.reason).filter(Boolean).join('; ')); if (owner) facts.push(['Owner', owner]); if (vehicleType) facts.push(['Vehicle type', vehicleType]); if (plate) facts.push(['Plate number', plate]); if (make) facts.push(['Vehicle make', make]); if (registration !== null) facts.push(['Registration status', registration ? 'REGISTERED' : 'UNREGISTERED']); if (amount != null) facts.push(['Outstanding amount', `₦${Number(amount).toLocaleString()}`]); if (obligation) facts.push(['Obligation note', obligation]); $('#recognitionVehicleFacts').innerHTML = facts.map(([label, value]) => `<div><strong>${label}</strong>${value}</div>`).join(''); }
+function setRecognitionMessage(message) { resultPlate.textContent = '-'; resultStatus.textContent = `Status: ${message}`; $('#recognitionMake').textContent = 'Unavailable'; $('#recognitionDetection').textContent = 'Unavailable'; $('#recognitionOcr').textContent = 'Unavailable'; setRegistrationBadge(null); renderVehicleFacts({}, null); }
+function renderRecognition(data) { const results = Array.isArray(data.results) ? data.results : []; const first = results[0]; const detected = Boolean(data.detection && data.detection.plate_detected) || results.length > 0; const ocrFailed = Boolean(first && (first.ocr_status === 'failed' || (first.plate_number || first.text) === 'UNKNOWN')); const detectorOnly = !first && data.detection && Array.isArray(data.detection.detections) ? data.detection.detections[0] : null; resultPlate.textContent = first ? (first.plate_number || first.text || 'UNKNOWN') : detected ? 'UNKNOWN' : 'No plate found'; resultStatus.textContent = `Status: ${ocrFailed ? 'Plate detected, OCR incomplete' : first ? 'Recognition complete' : detected ? 'Plate detected' : 'No plate detected'}`; $('#recognitionMake').textContent = first ? (first.vehicle_make || first.make || 'Unavailable') : 'Unavailable'; $('#recognitionDetection').textContent = confidenceLabel(first ? first.detection_confidence : detectorOnly && detectorOnly.confidence); $('#recognitionOcr').textContent = confidenceLabel(first && first.ocr_confidence); const registrationStatus = first && typeof first.registration_status === 'string' ? first.registration_status.toLowerCase() : ''; const registered = first && typeof first.is_registered === 'boolean' ? first.is_registered : registrationStatus.startsWith('registered') ? true : registrationStatus.startsWith('not_registered') ? false : null; setRegistrationBadge(registered); renderVehicleFacts(first || {}); if (first && resultPlate.textContent !== 'UNKNOWN' && !$('#vehiclePlateInput').value) $('#vehiclePlateInput').value = resultPlate.textContent; }
+function clearDetection() { latestDetection = null; if (detectionImageUrl) { URL.revokeObjectURL(detectionImageUrl); detectionImageUrl = null; } detectionImage.removeAttribute('src'); detectionImage.classList.add('hidden'); detectionCanvas.classList.add('hidden'); $('#detectionPlaceholder').classList.remove('hidden'); $('#detectionMessage').textContent = ''; $('#detectionDetails').innerHTML = ''; }
+function drawDetectionBoxes() { if (!latestDetection || !detectionImage.naturalWidth || !detectionImage.naturalHeight) return; const bounds = detectionImage.getBoundingClientRect(); const pixelRatio = window.devicePixelRatio || 1; const scaleX = bounds.width / detectionImage.naturalWidth; const scaleY = bounds.height / detectionImage.naturalHeight; detectionCanvas.width = Math.round(bounds.width * pixelRatio); detectionCanvas.height = Math.round(bounds.height * pixelRatio); const context = detectionCanvas.getContext('2d'); context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0); context.clearRect(0, 0, bounds.width, bounds.height); context.lineWidth = 3; context.font = '700 12px Arial'; const ocrResults = Array.isArray(latestDetection.results) ? latestDetection.results : []; const detectorResults = latestDetection.detection && Array.isArray(latestDetection.detection.detections) ? latestDetection.detection.detections : []; const boxes = ocrResults.length ? ocrResults.map(result => ({ ...result, detection_method: 'yolo' })) : detectorResults; boxes.forEach((result, index) => { const rawBox = result.bbox; const box = Array.isArray(rawBox) ? { x1: rawBox[0], y1: rawBox[1], x2: rawBox[2], y2: rawBox[3] } : rawBox; if (!box) return; const x = box.x1 * scaleX; const y = box.y1 * scaleY; const width = (box.x2 - box.x1) * scaleX; const height = (box.y2 - box.y1) * scaleY; const isFallback = result.detection_method === 'opencv_fallback'; context.strokeStyle = isFallback ? '#f2b46b' : '#66d9a8'; context.strokeRect(x, y, width, height); const label = result.text || 'Plate candidate'; const labelWidth = context.measureText(label).width + 14; context.fillStyle = context.strokeStyle; context.fillRect(x, Math.max(0, y - 22), labelWidth, 22); context.fillStyle = '#123d40'; context.fillText(label, x + 7, Math.max(15, y - 7)); }); }
+function showDetection(blob, data) { clearDetection(); latestDetection = data; detectionImageUrl = URL.createObjectURL(blob); detectionImage.onload = () => { detectionImage.classList.remove('hidden'); detectionCanvas.classList.remove('hidden'); $('#detectionPlaceholder').classList.add('hidden'); drawDetectionBoxes(); }; detectionImage.src = detectionImageUrl; const results = Array.isArray(data.results) ? data.results : []; const detectorResults = data.detection && Array.isArray(data.detection.detections) ? data.detection.detections : []; const detectedCount = results.length || detectorResults.length; const ocrFailed = results.length > 0 && results.every(result => result.ocr_status === 'failed' || result.plate_number === 'UNKNOWN'); $('#detectionMessage').textContent = ocrFailed ? 'Plate detected — OCR could not read the plate' : detectedCount ? `${detectedCount} plate${detectedCount === 1 ? '' : 's'} detected.` : 'No number plate detected.'; $('#detectionDetails').innerHTML = results.length ? results.map(result => `<div class="detection-item"><strong>${result.plate_number || result.text || 'UNKNOWN'}</strong><span>Detection confidence: ${(Number(result.detection_confidence || 0) * 100).toFixed(2)}% &nbsp; | &nbsp; OCR confidence: ${(Number(result.ocr_confidence || 0) * 100).toFixed(2)}%</span></div>`).join('') : detectorResults.map(result => `<div class="detection-item"><strong>UNKNOWN</strong><span>Detection confidence: ${(Number(result.confidence || 0) * 100).toFixed(2)}% &nbsp; | &nbsp; Method: ${result.detection_method || 'detector'}</span></div>`).join(''); }
+const detectionRenderer = showDetection;
+showDetection = function(blob, data) { detectionRenderer(blob, data); latestRecognitionData = data; if (debugDetails.open) rawResult.textContent = JSON.stringify(data, null, 2); renderRecognition(data); };
+window.addEventListener('resize', drawDetectionBoxes);
+function showAuth(mode) { authMode = mode; const signup = mode === 'signup'; $('#loginTab').classList.toggle('active', !signup); $('#signupTab').classList.toggle('active', signup); $('#nameField').classList.toggle('hidden', !signup); $('#authTitle').textContent = signup ? 'Create access.' : 'Welcome back.'; $('#authSubtitle').textContent = signup ? 'Set up an administrator account for the control room.' : 'Sign in to access your recognition dashboard.'; $('#authSubmit').textContent = signup ? 'Create account' : 'Sign in'; $('#password').autocomplete = signup ? 'new-password' : 'current-password'; $('#authMessage').textContent = ''; }
+function setMode(mode) { const isImage = mode === 'image'; $('#imageMode').classList.toggle('hidden', !isImage); $('#liveMode').classList.toggle('hidden', isImage); $('#imageModeButton').classList.toggle('active', isImage); $('#liveModeButton').classList.toggle('active', !isImage); }
+const mobileMenuToggle = document.createElement('button'); mobileMenuToggle.id = 'mobileMenuToggle'; mobileMenuToggle.className = 'mobile-menu-toggle'; mobileMenuToggle.type = 'button'; mobileMenuToggle.textContent = 'Menu'; mobileMenuToggle.setAttribute('aria-expanded', 'false'); $('.sidebar').prepend(mobileMenuToggle); mobileMenuToggle.onclick = () => { const isOpen = $('.sidebar').classList.toggle('nav-open'); mobileMenuToggle.setAttribute('aria-expanded', String(isOpen)); };
+$('.sidebar').addEventListener('click', event => { if (event.target.closest('.nav-button')) { $('.sidebar').classList.remove('nav-open'); mobileMenuToggle.setAttribute('aria-expanded', 'false'); } });
+async function request(url, options = {}) { const response = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } }); const text = await response.text(); let data; try { data = text ? JSON.parse(text) : {}; } catch { throw new Error(`Server returned ${response.status} instead of JSON. Restart the backend and try again.`); } if (!response.ok) throw new Error(data.detail || `Request failed (${response.status})`); return data; }
+function showDashboard(admin) { $('#authPage').classList.add('hidden'); $('#dashboard').classList.remove('hidden'); $('#adminName').textContent = admin.name; $('#today').textContent = new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' }); loadHistory(); loadAnalytics(); loadVehicles(); loadAlerts(); loadTraffic(); loadTrafficStats(); loadTrafficCamera(); notifyNewTraffic(); }
+async function boot() { try { const data = await request('/api/v1/auth/me'); showDashboard(data.admin); } catch { showAuth('login'); } }
+$('#loginTab').onclick = () => showAuth('login'); $('#signupTab').onclick = () => showAuth('signup');
+$('#authForm').onsubmit = async event => { event.preventDefault(); $('#authSubmit').disabled = true; $('#authMessage').textContent = 'Working...'; try { const endpoint = authMode === 'signup' ? '/api/v1/auth/signup' : '/api/v1/auth/login'; const data = await request(endpoint, { method:'POST', body:JSON.stringify({ name: $('#name').value, email: $('#email').value, password: $('#password').value }) }); showDashboard(data.admin); } catch (error) { $('#authMessage').textContent = error.message; } finally { $('#authSubmit').disabled = false; } };
+$('#logout').onclick = async () => { await request('/api/v1/auth/logout', { method:'POST' }); location.reload(); };
+
+const analyticsView = document.createElement('section'); analyticsView.className = 'view'; analyticsView.id = 'analyticsView'; analyticsView.innerHTML = `
+  <div class="analytics-summary">
+    <div class="stat"><small>Total scans</small><strong id="analyticsTotal">0</strong></div>
+    <div class="stat"><small>Registered</small><strong id="analyticsRegistered">0</strong></div>
+    <div class="stat"><small>Verified</small><strong id="analyticsVerified">0</strong></div>
+    <div class="stat"><small>Top plate</small><strong id="analyticsTopPlate">-</strong></div>
+  </div>
+  <div class="analytics-grid">
+    <div class="analytics-card">
+      <h3>Plate frequency</h3>
+      <ul id="analyticsPlateList" class="analytics-list"></ul>
+    </div>
+    <div class="analytics-card">
+      <h3>Status mix</h3>
+      <ul id="analyticsStatusList" class="analytics-list"></ul>
+    </div>
+  </div>
+`;
+document.querySelector('.content').appendChild(analyticsView);
+const vehiclesNav = document.createElement('button'); vehiclesNav.className = 'nav-button'; vehiclesNav.dataset.view = 'vehicles'; vehiclesNav.type = 'button'; vehiclesNav.textContent = 'Registered vehicles'; document.querySelector('.nav-label').after(vehiclesNav);
+const vehiclesView = document.createElement('section'); vehiclesView.className = 'view'; vehiclesView.id = 'vehiclesView'; vehiclesView.innerHTML = '<div class="panel"><div class="panel-head"><h2>Registered vehicles</h2><button class="text-button" id="refreshVehicles" type="button">Refresh</button></div><div class="history-table-wrap"><table><thead><tr><th>Plate Number</th><th>Vehicle Make</th><th>Status</th><th>Recognition Count</th><th>First Seen</th><th>Last Seen</th></tr></thead><tbody id="vehicleRows"><tr><td colspan="6" class="empty">No vehicles registered yet.</td></tr></tbody></table></div></div>'; document.querySelector('.content').appendChild(vehiclesView);
+async function loadVehicles() { try { const data = await request('/api/v1/vehicles?limit=500'); const records = Array.isArray(data.results) ? data.results : []; $('#vehicleRows').innerHTML = records.length ? records.map(item => `<tr><td>${item.plate_number}</td><td>${item.vehicle_make || '-'}</td><td><span class="status verified">${item.status}</span></td><td>${item.recognition_count}</td><td>${new Date(item.first_seen).toLocaleString()}</td><td>${new Date(item.last_seen).toLocaleString()}</td></tr>`).join('') : '<tr><td colspan="6" class="empty">No vehicles registered yet.</td></tr>'; } catch (error) { $('#vehicleRows').innerHTML = `<tr><td colspan="6" class="empty">${error.message}</td></tr>`; } }
+$('#refreshVehicles').onclick = loadVehicles;
+const trafficNav = document.createElement('button'); trafficNav.className = 'nav-button'; trafficNav.dataset.view = 'traffic'; trafficNav.type = 'button'; trafficNav.textContent = 'Traffic violations'; document.querySelector('.nav-label').after(trafficNav);
+const trafficView = document.createElement('section'); trafficView.className = 'view'; trafficView.id = 'trafficView'; trafficView.innerHTML = `<div class="analytics-summary"><div class="stat"><small>Pending reviews</small><strong id="trafficPending">0</strong></div><div class="stat"><small>Confirmed citations</small><strong id="trafficConfirmed">0</strong></div><div class="stat"><small>Total violations</small><strong id="trafficTotal">0</strong></div><div class="stat"><small>Latest event</small><strong id="trafficLatest">-</strong></div></div><div class="panel"><div class="panel-head"><h2>Traffic violation review</h2><button class="text-button" id="refreshTraffic" type="button">Refresh</button></div><div class="history-table-wrap"><table><thead><tr><th>Time</th><th>Plate</th><th>Violation</th><th>Camera</th><th>Status</th><th>Review</th></tr></thead><tbody id="trafficRows"><tr><td colspan="6" class="empty">No traffic violations recorded.</td></tr></tbody></table></div></div>`; document.querySelector('.content').appendChild(trafficView);
+async function loadTraffic() { try { const data = await request('/api/v1/violations?limit=100'); const records = Array.isArray(data.results) ? data.results : []; const pending = records.filter(item => item.violation_status === 'PENDING_REVIEW').length; const confirmed = records.filter(item => item.violation_status === 'CONFIRMED').length; $('#trafficPending').textContent = pending; $('#trafficConfirmed').textContent = confirmed; $('#trafficTotal').textContent = records.length; $('#trafficLatest').textContent = records[0] ? records[0].violation_type.replaceAll('_', ' ') : '-'; $('#trafficRows').innerHTML = records.length ? records.map(item => `<tr><td>${new Date(item.timestamp).toLocaleString()}</td><td>${item.plate_text || 'Unidentified'}</td><td>${item.violation_type.replaceAll('_', ' ')}</td><td>${item.camera_id}</td><td><span class="status ${item.violation_status === 'CONFIRMED' ? 'verified' : 'unverified'}">${item.violation_status.replaceAll('_', ' ')}</span></td><td>${item.violation_status === 'PENDING_REVIEW' ? `<button class="text-button traffic-confirm" data-id="${item.id}" type="button">Confirm</button> <button class="text-button traffic-dismiss" data-id="${item.id}" type="button">Dismiss</button>` : (item.evidence_image ? `<a href="/${item.evidence_image}" target="_blank" rel="noopener">Evidence</a>` : '-')}</td></tr>`).join('') : '<tr><td colspan="6" class="empty">No traffic violations recorded.</td></tr>'; document.querySelectorAll('.traffic-confirm').forEach(button => button.onclick = async () => { await request(`/api/v1/violations/${button.dataset.id}/confirm`, { method:'POST' }); await loadTraffic(); }); document.querySelectorAll('.traffic-dismiss').forEach(button => button.onclick = async () => { await request(`/api/v1/violations/${button.dataset.id}/dismiss`, { method:'POST' }); await loadTraffic(); }); } catch (error) { $('#trafficRows').innerHTML = `<tr><td colspan="6" class="empty">${error.message}</td></tr>`; } }
+$('#refreshTraffic').onclick = loadTraffic;
+const trafficZoneEditor = document.createElement('div'); trafficZoneEditor.className = 'analytics-card'; trafficZoneEditor.innerHTML = `<h3>Detection zones</h3><p class="empty">Use JSON arrays of [x,y] points.</p><div class="manager-grid"><div><label for="trafficStopLine">Stop line</label><input id="trafficStopLine" placeholder="[[100,20],[100,300]]"><label for="trafficBusPolygon">Bus-lane polygon</label><input id="trafficBusPolygon" placeholder="[[0,0],[500,0],[500,300],[0,300]]"></div><div><label for="trafficSpeedZone">Speed zone</label><input id="trafficSpeedZone" placeholder="[[0,0],[500,0],[500,300],[0,300]]"><label for="trafficEntryZone">Entry zone</label><input id="trafficEntryZone" placeholder="[[0,0],[100,0],[100,100],[0,100]]"></div></div><label for="trafficExitZones">Exit zones JSON</label><input id="trafficExitZones" placeholder='{"A":[[200,0],[300,0],[300,100],[200,100]]}'><label for="trafficRestrictedZones">Restricted exits</label><input id="trafficRestrictedZones" placeholder='["A"]'>`; trafficView.appendChild(trafficZoneEditor);
+const citationEditor = document.createElement('div'); citationEditor.className = 'analytics-card'; citationEditor.innerHTML = `<h3>Edit citation</h3><div class="manager-grid"><div><label for="editCitationId">Citation ID</label><input id="editCitationId" type="number" min="1"><label for="editCitationAmount">Application amount</label><input id="editCitationAmount" type="number" min="0" step="0.01"></div><div><label for="editCitationDue">Due date</label><input id="editCitationDue" type="date"><label for="editCitationDescription">Description</label><input id="editCitationDescription" placeholder="Review note"></div></div><button class="primary" id="saveCitationEdit" type="button">Save citation edit</button><div class="empty" id="citationEditMessage"></div>`; trafficView.appendChild(citationEditor);
+const trafficTools = document.createElement('div'); trafficTools.className = 'analytics-grid'; trafficTools.innerHTML = `<div class="analytics-card"><h3>Traffic analytics</h3><div id="trafficAnalytics" class="analytics-list"><li><span class="label">Loading</span><span class="value">-</span></li></div></div><div class="analytics-card"><h3>Camera rules</h3><div class="manager-grid"><div><label for="trafficCameraId">Camera ID</label><input id="trafficCameraId" value="CAM-01"><label for="trafficCameraName">Name</label><input id="trafficCameraName" placeholder="Main entrance"></div><div><label for="trafficLocation">Location</label><input id="trafficLocation" placeholder="Intersection name"><label for="trafficSpeedLimit">Speed limit</label><input id="trafficSpeedLimit" type="number" min="0" step="1" placeholder="50"></div></div><div class="manager-grid"><div><label><input id="trafficRedEnabled" type="checkbox"> Red-light monitoring</label><label for="trafficLightState">Light state</label><select id="trafficLightState"><option value="">Unavailable</option><option value="RED">Red</option><option value="GREEN">Green</option><option value="AMBER">Amber</option></select></div><div><label><input id="trafficBusEnabled" type="checkbox"> Bus-lane monitoring</label><label for="trafficBusDuration">Minimum lane seconds</label><input id="trafficBusDuration" type="number" min="0" step="0.5" value="3"></div></div><div class="manager-grid"><div><label><input id="trafficTurnEnabled" type="checkbox"> Illegal-turn monitoring</label><label for="trafficPixelsMeter">Pixels per meter</label><input id="trafficPixelsMeter" type="number" min="0" step="0.1" placeholder="Required for speed"></div><div><label><input id="trafficVideoEnabled" type="checkbox"> Save short evidence video</label><label for="trafficVideoSeconds">Video seconds</label><input id="trafficVideoSeconds" type="number" min="1" max="10" step="1" value="3"></div></div><button class="primary" id="saveTrafficCamera" type="button">Save camera rules</button><div class="empty" id="trafficCameraMessage"></div></div>`; trafficView.appendChild(trafficTools);
+async function loadTrafficStats() { try { const data = await request('/api/v1/traffic/statistics'); const periods = data.periods || {}; const types = data.by_type || {}; const speeding = data.speeding || {}; $('#trafficAnalytics').innerHTML = `<li><span class="label">Today</span><span class="value">${periods.today || 0}</span></li><li><span class="label">This week</span><span class="value">${periods.this_week || 0}</span></li><li><span class="label">Red light</span><span class="value">${types.RED_LIGHT || 0}</span></li><li><span class="label">Bus lane</span><span class="value">${types.BUS_LANE || 0}</span></li><li><span class="label">Speeding average</span><span class="value">${speeding.average_speed || 0} km/h</span></li>`; } catch (error) { $('#trafficAnalytics').innerHTML = `<li><span class="label">Unable to load</span><span class="value">-</span></li>`; } }
+async function loadTrafficCamera() { try { const data = await request('/api/v1/cameras'); const camera = data.results && data.results[0]; if (!camera) return; $('#trafficCameraId').value = camera.camera_id || 'CAM-01'; $('#trafficCameraName').value = camera.camera_name || ''; $('#trafficLocation').value = camera.location_name || ''; $('#trafficSpeedLimit').value = camera.speed_limit ?? ''; $('#trafficRedEnabled').checked = Boolean(camera.traffic_light_enabled); $('#trafficLightState').value = camera.traffic_light_state || ''; $('#trafficBusEnabled').checked = Boolean(camera.bus_lane_enabled); $('#trafficBusDuration').value = camera.bus_lane_min_duration ?? 3; $('#trafficTurnEnabled').checked = Boolean(camera.illegal_turn_enabled); $('#trafficPixelsMeter').value = camera.pixels_per_meter ?? ''; $('#trafficVideoEnabled').checked = Boolean(camera.evidence_video_enabled); $('#trafficVideoSeconds').value = camera.evidence_video_seconds ?? 3; } catch (error) { $('#trafficCameraMessage').textContent = error.message; } }
+$('#saveTrafficCamera').onclick = async () => { const payload = { camera_id: $('#trafficCameraId').value.trim() || 'CAM-01', camera_name: $('#trafficCameraName').value.trim() || 'Camera', location_name: $('#trafficLocation').value.trim() || 'Not configured', speed_limit: $('#trafficSpeedLimit').value ? Number($('#trafficSpeedLimit').value) : null, traffic_light_enabled: $('#trafficRedEnabled').checked, traffic_light_state: $('#trafficLightState').value || null, bus_lane_enabled: $('#trafficBusEnabled').checked, bus_lane_min_duration: Number($('#trafficBusDuration').value || 3), illegal_turn_enabled: $('#trafficTurnEnabled').checked, pixels_per_meter: $('#trafficPixelsMeter').value ? Number($('#trafficPixelsMeter').value) : null, evidence_video_enabled: $('#trafficVideoEnabled').checked, evidence_video_seconds: Number($('#trafficVideoSeconds').value || 3) }; try { await request(`/api/v1/cameras/${encodeURIComponent(payload.camera_id)}`, { method:'PUT', body:JSON.stringify(payload) }); $('#trafficCameraMessage').textContent = 'Camera rules saved.'; } catch (error) { $('#trafficCameraMessage').textContent = error.message; } };
+let trafficNotificationIds = new Set(); let trafficNotificationsInitialized = false; async function notifyNewTraffic() { try { const data = await request('/api/v1/violations?violation_status=PENDING_REVIEW&limit=20'); const records = Array.isArray(data.results) ? data.results : []; const fresh = trafficNotificationsInitialized ? records.filter(item => !trafficNotificationIds.has(item.id)) : []; records.forEach(item => trafficNotificationIds.add(item.id)); trafficNotificationsInitialized = true; if (fresh.length && 'Notification' in window && Notification.permission === 'granted') fresh.slice(0, 3).forEach(item => new Notification('Traffic violation detected', { body: `${item.violation_type.replaceAll('_', ' ')} - ${item.plate_text || 'Unidentified vehicle'}` })); } catch {} }
+if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+const originalLoadTrafficCamera = loadTrafficCamera; loadTrafficCamera = async function() { await originalLoadTrafficCamera(); try { const data = await request('/api/v1/cameras'); const camera = data.results && data.results[0]; if (!camera) return; $('#trafficStopLine').value = JSON.stringify(camera.stop_line || []); $('#trafficBusPolygon').value = JSON.stringify(camera.bus_lane_polygon || []); $('#trafficSpeedZone').value = JSON.stringify(camera.speed_measurement_zone || []); $('#trafficEntryZone').value = JSON.stringify(camera.entry_zone || []); $('#trafficExitZones').value = JSON.stringify(camera.exit_zones || {}); $('#trafficRestrictedZones').value = JSON.stringify(camera.restricted_exit_zones || []); } catch {} };
+function parseZoneField(id, fallback) { const value = $(`#${id}`).value.trim(); if (!value) return fallback; const parsed = JSON.parse(value); return parsed; }
+$('#saveTrafficCamera').onclick = async () => { try { const cameraId = $('#trafficCameraId').value.trim() || 'CAM-01'; const payload = { camera_id: cameraId, camera_name: $('#trafficCameraName').value.trim() || 'Camera', location_name: $('#trafficLocation').value.trim() || 'Not configured', speed_limit: $('#trafficSpeedLimit').value ? Number($('#trafficSpeedLimit').value) : null, traffic_light_enabled: $('#trafficRedEnabled').checked, traffic_light_state: $('#trafficLightState').value || null, stop_line: parseZoneField('trafficStopLine', []), bus_lane_enabled: $('#trafficBusEnabled').checked, bus_lane_min_duration: Number($('#trafficBusDuration').value || 3), bus_lane_polygon: parseZoneField('trafficBusPolygon', []), speed_measurement_zone: parseZoneField('trafficSpeedZone', []), pixels_per_meter: $('#trafficPixelsMeter').value ? Number($('#trafficPixelsMeter').value) : null, illegal_turn_enabled: $('#trafficTurnEnabled').checked, entry_zone: parseZoneField('trafficEntryZone', []), exit_zones: parseZoneField('trafficExitZones', {}), restricted_exit_zones: parseZoneField('trafficRestrictedZones', []), evidence_video_enabled: $('#trafficVideoEnabled').checked, evidence_video_seconds: Number($('#trafficVideoSeconds').value || 3) }; await request(`/api/v1/cameras/${encodeURIComponent(cameraId)}`, { method:'PUT', body:JSON.stringify(payload) }); $('#trafficCameraMessage').textContent = 'Camera rules saved.'; } catch (error) { $('#trafficCameraMessage').textContent = error.message || 'Zone JSON is invalid.'; } };
+$('#saveCitationEdit').onclick = async () => { try { const id = Number($('#editCitationId').value); if (!id) throw new Error('Enter a citation ID.'); await request(`/api/v1/citations/${id}`, { method:'PUT', body:JSON.stringify({ amount: $('#editCitationAmount').value ? Number($('#editCitationAmount').value) : null, due_date: $('#editCitationDue').value || null, description: $('#editCitationDescription').value || null }) }); $('#citationEditMessage').textContent = 'Citation updated.'; } catch (error) { $('#citationEditMessage').textContent = error.message; } };
+
+document.querySelectorAll('.nav-button').forEach(button => button.onclick = () => { document.querySelectorAll('.nav-button').forEach(item => item.classList.remove('active')); document.querySelectorAll('.view').forEach(view => view.classList.remove('active')); if (button.dataset.view !== 'overview') $('#overviewView').classList.remove('recognition-active'); button.classList.add('active'); const target = document.getElementById(`${button.dataset.view}View`); if (target) target.classList.add('active'); $('#viewTitle').textContent = button.textContent; if (button.dataset.view === 'history') loadHistory(); if (button.dataset.view === 'analytics') loadAnalytics(); if (button.dataset.view === 'vehicles') loadVehicles(); if (button.dataset.view === 'traffic') loadTraffic(); });
+async function loadHistory() { try { const data = await request('/api/v1/history?limit=100'); $('#historyRows').innerHTML = data.results.length ? data.results.map(record => `<tr><td>${new Date(record.recognized_at).toLocaleString()}</td><td>${record.plate_text}</td><td><span class="status ${record.is_verified ? 'verified' : 'unverified'}">${record.registration_status.replaceAll('_', ' ')}</span></td><td>${record.make || '-'}</td><td>${record.model || '-'}</td></tr>`).join('') : '<tr><td colspan="5" class="empty">No plates recorded yet.</td></tr>'; $('#historyStatus').textContent = `${data.count} record${data.count === 1 ? '' : 's'} loaded`; $('#totalCount').textContent = data.count; if (data.results[0]) { $('#latestPlate').textContent = data.results[0].plate_text; $('#latestMake').textContent = data.results[0].make || '-'; } else { $('#latestPlate').textContent = '-'; $('#latestMake').textContent = '-'; } } catch (error) { $('#historyRows').innerHTML = `<tr><td colspan="5" class="empty">${error.message}</td></tr>`; } }
+
+loadHistory = async function() { try { if (!$('#historySearch')) { const search = document.createElement('input'); search.id = 'historySearch'; search.placeholder = 'Filter by plate number'; search.style.maxWidth = '260px'; document.querySelector('#historyView .panel-head').prepend(search); search.oninput = () => loadHistory(); } const filter = $('#historySearch').value.trim(); const data = await request(`/api/v1/vehicle-history?limit=100${filter ? `&plate_number=${encodeURIComponent(filter)}` : ''}`); const records = Array.isArray(data.results) ? data.results : []; $('#historyRows').innerHTML = records.length ? records.map(record => `<tr><td>${new Date(record.recognized_at).toLocaleString()}</td><td>${record.plate_number}</td><td>${record.vehicle_make || '-'}</td><td>${record.recognition_source}</td><td>${(Number(record.detection_confidence || 0) * 100).toFixed(1)}%</td><td>${(Number(record.ocr_confidence || 0) * 100).toFixed(1)}%</td></tr>`).join('') : '<tr><td colspan="6" class="empty">No recognition events recorded.</td></tr>'; $('#historyStatus').textContent = `${data.count} event${data.count === 1 ? '' : 's'} loaded`; $('#totalCount').textContent = data.count; if (records[0]) { $('#latestPlate').textContent = records[0].plate_number; $('#latestMake').textContent = records[0].vehicle_make || '-'; } } catch (error) { $('#historyRows').innerHTML = `<tr><td colspan="6" class="empty">${error.message}</td></tr>`; } };
+async function loadAnalytics() { try { const data = await request('/api/v1/history?limit=200'); const records = Array.isArray(data.results) ? data.results : []; const statusCounts = { registered_verified: 0, registered_unverified: 0, not_registered_unverified: 0 }; const plateCounts = {}; records.forEach(record => { const status = record.registration_status || 'not_registered_unverified'; statusCounts[status] = (statusCounts[status] || 0) + 1; const plate = record.plate_text || 'Unknown'; plateCounts[plate] = (plateCounts[plate] || 0) + 1; }); const topPlate = Object.entries(plateCounts).sort((a, b) => b[1] - a[1])[0]; const maxFrequency = topPlate ? topPlate[1] : 0; const totalRegistered = statusCounts.registered_verified + statusCounts.registered_unverified; const totalVerified = statusCounts.registered_verified; const totalScans = records.length; $('#analyticsTotal').textContent = totalScans; $('#analyticsRegistered').textContent = totalRegistered; $('#analyticsVerified').textContent = totalVerified; $('#analyticsTopPlate').textContent = topPlate ? topPlate[0] : '-';
+    const plateRows = Object.entries(plateCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([plate, count]) => `<li><span class="label">${plate}</span><span class="value">${count}</span></li>`).join('');
+    $('#analyticsPlateList').innerHTML = plateRows || '<li><span class="label">No plate data</span><span class="value">0</span></li>';
+    const statusEntries = [
+      ['Registered verified', statusCounts.registered_verified],
+      ['Registered unverified', statusCounts.registered_unverified],
+      ['Not registered', statusCounts.not_registered_unverified]
+    ];
+    $('#analyticsStatusList').innerHTML = statusEntries.map(([label, count]) => {
+      const share = totalScans ? (count / totalScans) * 100 : 0;
+      return `<li><div class="analytics-bar"><span>${label}</span><div class="analytics-bar-track"><i style="width:${share}%"></i></div><strong>${count}</strong></div></li>`;
+    }).join('');
+  } catch (error) {
+    $('#analyticsPlateList').innerHTML = '<li><span class="label">Unable to load</span><span class="value">0</span></li>';
+    $('#analyticsStatusList').innerHTML = '<li><span class="label">No data</span><span class="value">0</span></li>';
+  }
+}
+
+async function loadAlerts() {
+  try {
+    const data = await request('/api/v1/vehicles/alerts');
+    const alerts = Array.isArray(data.results) ? data.results : [];
+    $('#alertsList').innerHTML = alerts.length ? alerts.slice(0, 5).map(alert => `
+      <div class="alert-item">
+        <div>
+          <strong>${alert.plate_text}</strong>
+          <div class="meta">${alert.reason || alert.status || 'Manual review'} · ₦${Number(alert.amount_owed || 0).toLocaleString()}</div>
+        </div>
+        <div class="alert-badge ${alert.priority || 'low'}">${alert.priority || 'low'}</div>
+      </div>
+    `).join('') : '<div class="empty">No current alerts.</div>';
+  } catch (error) {
+    $('#alertsList').innerHTML = `<div class="empty">${error.message}</div>`;
+  }
+}
+
+function renderVehicleProfile(profile) {
+  latestVehicleProfile = profile;
+  renderVehicleFacts({}, profile);
+  const obligations = Array.isArray(profile.obligations) ? profile.obligations : [];
+  const amount = Number(profile.outstanding_amount || profile.amount_owed || 0);
+  const status = profile.status || 'clear';
+  $('#vehicleStatusSelect').value = status;
+  $('#vehicleStatusReason').value = profile.reason || '';
+  $('#vehicleAmountInput').value = amount;
+  $('#vehicleProfileResult').innerHTML = `
+    <h3>${profile.plate_text || 'Vehicle profile'}</h3>
+    <div class="vehicle-profile-grid">
+      <div><strong>Status</strong>: ${status}</div>
+      <div><strong>Outstanding</strong>: ₦${amount.toLocaleString()}</div>
+      <div><strong>Reason</strong>: ${profile.reason || 'No reason recorded'}</div>
+      <div><strong>Updated</strong>: ${profile.updated_at ? new Date(profile.updated_at).toLocaleString() : 'Never'}</div>
+    </div>
+    <ul class="vehicle-profile-list">
+      ${obligations.length ? obligations.map(item => `<li>${item.reason || 'Obligation'} · ₦${Number(item.amount || 0).toLocaleString()} · ${item.status}</li>`).join('') : '<li>No obligation records found.</li>'}
+    </ul>
+  `;
+}
+
+async function lookupVehicleProfile() {
+  const plate = $('#vehiclePlateInput').value.trim();
+  if (!plate) {
+    $('#vehicleProfileResult').innerHTML = '<div class="empty">Enter a plate number to inspect.</div>';
+    return;
+  }
+  try {
+    const data = await request(`/api/v1/vehicles/${encodeURIComponent(plate)}`);
+    renderVehicleProfile(data);
+  } catch (error) {
+    $('#vehicleProfileResult').innerHTML = `<div class="empty">${error.message}</div>`;
+  }
+}
+
+async function saveVehicleProfile() {
+  const plate = $('#vehiclePlateInput').value.trim();
+  if (!plate) {
+    $('#vehicleProfileResult').innerHTML = '<div class="empty">Enter a plate number first.</div>';
+    return;
+  }
+  try {
+    const statusValue = $('#vehicleStatusSelect').value || 'clear';
+    const statusReason = $('#vehicleStatusReason').value.trim();
+    const amountValue = Number($('#vehicleAmountInput').value || 0);
+    const amountReason = $('#vehicleAmountReason').value.trim();
+    await request('/api/v1/vehicles/status', {
+      method: 'POST',
+      body: JSON.stringify({ plate_text: plate, status: statusValue, reason: statusReason })
+    });
+    if (amountValue > 0 || amountReason) {
+      await request('/api/v1/vehicles/obligations', {
+        method: 'POST',
+        body: JSON.stringify({ plate_text: plate, amount: amountValue, reason: amountReason, status: 'OPEN' })
+      });
+    }
+    const refreshed = await request(`/api/v1/vehicles/${encodeURIComponent(plate)}`);
+    renderVehicleProfile(refreshed);
+    await loadAlerts();
+    await loadAnalytics();
+    $('#vehicleProfileResult').innerHTML += '<div class="empty" style="margin-top:12px;">Vehicle record saved.</div>';
+  } catch (error) {
+    $('#vehicleProfileResult').innerHTML = `<div class="empty">${error.message}</div>`;
+  }
+}
+
+$('#lookupVehicleButton').onclick = lookupVehicleProfile;
+$('#saveVehicleStatusButton').onclick = saveVehicleProfile;
+$('#refreshHistory').onclick = loadHistory;
+const originalShowDetection = showDetection; showDetection = function(blob, data) { originalShowDetection(blob, data); const registered = (data.results || []).filter(result => result.recognition_label); if (registered.length) { const details = registered.map(result => `<div class="detection-item"><strong>${result.recognition_label}</strong><span>${result.plate_number} · ${result.vehicle_make || result.make || 'Make unknown'} · ${result.recognition_count} recognition${Number(result.recognition_count) === 1 ? '' : 's'} · Last seen ${new Date(result.last_seen).toLocaleString()}</span></div>`).join(''); $('#detectionDetails').insertAdjacentHTML('afterbegin', details); } };
+async function recognizeBlob(blob) { const body = new FormData(); body.append('file', blob, 'camera.jpg'); const response = await fetch('/api/v1/recognize', { method:'POST', body }); const text = await response.text(); let data; try { data = text ? JSON.parse(text) : {}; } catch { throw new Error(`Recognition server error (${response.status}). Check the backend log for details.`); } if (!response.ok) throw new Error(data.detail || 'Recognition failed'); const first = data.results[0]; const detected = Boolean(data.detection && data.detection.plate_detected); $('#plate').textContent = first ? (first.plate_number || first.text || 'UNKNOWN') : detected ? 'UNKNOWN' : 'No plate found'; $('#result').classList.remove('hidden'); showDetection(blob, data); await loadHistory(); await loadAnalytics(); }
+$('#imageModeButton').onclick = () => setMode('image'); $('#liveModeButton').onclick = () => setMode('live');
+$('#startCamera').onclick = async () => { try { $('#cameraStatus').textContent = 'Starting live stream...'; const response = await request('/api/v1/live/start', { method:'POST' }); if (response.status === 'already_started') { $('#cameraStatus').textContent = 'Live camera already running'; } else { $('#cameraStatus').textContent = 'Live camera active - tracking vehicles'; } $('#liveStream').src = '/api/v1/live?ts=' + Date.now(); $('#liveStream').classList.remove('hidden'); $('#startCamera').disabled = true; $('#stopCamera').disabled = false; await refreshLiveStatus(); } catch (error) { $('#cameraStatus').textContent = error.message; } };
+$('#stopCamera').onclick = stopCamera;
+function stopCamera() { fetch('/api/v1/live/stop', { method:'POST' }).catch(() => {}); $('#liveStream').src = ''; $('#liveStream').classList.add('hidden'); $('#startCamera').disabled = false; $('#stopCamera').disabled = true; $('#cameraStatus').textContent = 'Camera is off'; }
+function renderTrackDetails(tracked) { const details = $('#liveTrackDetails'); const content = $('#liveTrackDetailContent'); if (!tracked.length) { details.classList.add('hidden'); content.innerHTML = ''; return; } const active = tracked.find(item => Number(item.track_id) === Number(selectedLiveTrackId)) || tracked[0]; selectedLiveTrackId = active ? Number(active.track_id) : null; if (!active) { details.classList.add('hidden'); content.innerHTML = ''; return; } const rows = Array.isArray(active.recognition_history) ? active.recognition_history : []; const confidence = Number(active.ocr_confidence_percent || 0); const detection = Number(active.detection_confidence_percent || 0); const width = `${Math.min(100, Math.max(0, confidence))}%`; const detectionWidth = `${Math.min(100, Math.max(0, detection))}%`; content.innerHTML = `
+        <div class="live-track-detail-grid">
+          <div><strong>Track ID</strong>: #${String(active.track_id).padStart(3,'0')}</div>
+          <div><strong>Plate</strong>: ${active.plate || 'Reading...'}</div>
+          <div><strong>OCR confidence</strong>: ${confidence > 0 ? `${confidence.toFixed(1)}%` : '--'}</div>
+          <div><strong>Detection confidence</strong>: ${detection > 0 ? `${detection.toFixed(1)}%` : '--'}</div>
+          <div><strong>Best OCR score</strong>: <div class="confidence-bar"><span style="width:${width};"></span></div></div>
+          <div><strong>Detection score</strong>: <div class="confidence-bar"><span style="width:${detectionWidth};"></span></div></div>
+          <div><strong>History entries</strong>: ${rows.length}</div>
+          <div><strong>Status</strong>: ${active.status || 'Tracked'}</div>
+        </div>
+        <div style="margin-bottom:8px;font:700 11px Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);">Recent OCR history</div>
+        ${rows.length ? `<ul class="live-history-list">${rows.map(entry => `<li><strong>${entry.plate || 'Reading...'}</strong> · OCR ${Number(entry.ocr_confidence_percent || 0).toFixed(1)}% · Detection ${Number(entry.detection_confidence * 100 || 0).toFixed(1)}%</li>`).join('')}</ul>` : '<div class="live-history-empty">No OCR history yet for this vehicle.</div>'}`;
+    details.classList.remove('hidden');
+}
+async function refreshLiveStatus() { try { const data = await request('/api/v1/live/status'); const tracked = Array.isArray(data.tracked_vehicles) ? data.tracked_vehicles : []; $('#liveVehicleCount').textContent = data.track_count ?? tracked.length; $('#livePlateCount').textContent = tracked.filter(item => item.plate && item.plate !== 'Reading...').length; if (!tracked.length) { $('#liveTracksBody').innerHTML = '<tr><td colspan="4" class="empty">No vehicles detected yet.</td></tr>'; $('#liveTrackDetails').classList.add('hidden'); $('#liveTrackDetailContent').innerHTML = ''; return; } $('#liveTracksBody').innerHTML = tracked.map(item => { const confidence = Number(item.ocr_confidence_percent || 0); const label = item.plate && item.plate !== 'Reading...' ? item.plate : 'Reading...'; const status = item.plate && item.plate !== 'Reading...' ? 'Tracked' : 'Reading...'; const width = `${Math.min(100, Math.max(0, confidence))}%`; return `<tr data-track-id="${item.track_id}" style="cursor:pointer;"> <td>#${String(item.track_id).padStart(3,'0')}</td><td>${label}</td><td><div class="confidence-bar"><span style="width:${width};"></span></div><div style="margin-top:4px;font-size:11px;color:var(--muted);">${confidence > 0 ? `${confidence.toFixed(0)}%` : '--'}</div></td><td>${status}</td></tr>`; }).join(''); $('#liveTracksBody').querySelectorAll('tr[data-track-id]').forEach(row => { row.onclick = () => { selectedLiveTrackId = Number(row.dataset.trackId); renderTrackDetails(tracked); }; }); renderTrackDetails(tracked); } catch (error) { $('#cameraStatus').textContent = error.message; } }
+setInterval(() => { if (!$('#liveMode').classList.contains('hidden')) refreshLiveStatus(); }, 1200);
+$('#recognize').onclick = async () => { const image = $('#file').files[0]; if (!image) { clearDetection(); $('#out').textContent = 'Choose an image first.'; $('#result').classList.remove('hidden'); return; } $('#recognize').disabled = true; $('#out').textContent = 'Processing...'; $('#result').classList.remove('hidden'); try { await recognizeBlob(image); } catch (error) { clearDetection(); $('#out').textContent = error.message; } finally { $('#recognize').disabled = false; } };
+document.querySelector('#historyView thead tr').innerHTML = '<th>Time</th><th>Plate</th><th>Make</th><th>Source</th><th>Detection</th><th>OCR</th>';
+const historyTable = document.querySelector('#historyView table'); const historyTableWrap = document.createElement('div'); historyTableWrap.className = 'history-table-wrap'; historyTable.replaceWith(historyTableWrap); historyTableWrap.append(historyTable); const clearHistoryButton = document.createElement('button'); clearHistoryButton.id = 'clearHistory'; clearHistoryButton.className = 'text-button'; clearHistoryButton.type = 'button'; clearHistoryButton.textContent = 'Clear history'; document.querySelector('#historyView .panel-head').append(clearHistoryButton); clearHistoryButton.onclick = async () => { if (!confirm('Clear all recognition history? This cannot be undone.')) return; clearHistoryButton.disabled = true; $('#historyStatus').textContent = 'Clearing recognition history...'; try { await request('/api/v1/history', { method:'DELETE' }); await loadHistory(); await loadAnalytics(); $('#historyStatus').textContent = 'Recognition history cleared.'; } catch (error) { $('#historyStatus').textContent = `Unable to clear history: ${error.message}`; } finally { clearHistoryButton.disabled = false; } };
+const MOBILE_PROCESS_INTERVAL = 250; let mobileCameraModeActive = false; let mobileMediaStream = null; let mobileFrameTimer = null; let mobileFrameInFlight = false; let mobileFacingMode = 'environment';
+const laptopCameraControl = document.querySelector('#startCamera').closest('.camera-controls');
+const liveSourceToggle = document.createElement('div'); liveSourceToggle.className = 'mobile-live-source-toggle'; liveSourceToggle.innerHTML = '<button class="active" id="laptopCameraModeButton" type="button">Laptop camera</button><button id="mobileCameraModeButton" type="button">Phone camera</button>'; document.querySelector('#liveMode').prepend(liveSourceToggle);
+const mobileCameraPanel = document.createElement('div'); mobileCameraPanel.id = 'mobileCameraPanel'; mobileCameraPanel.className = 'mobile-camera-panel hidden'; mobileCameraPanel.innerHTML = '<div class="mobile-video-stage"><video id="mobileVideo" autoplay playsinline muted aria-label="Phone camera preview"></video><canvas id="mobileOverlayCanvas" aria-hidden="true"></canvas></div><canvas id="mobileFrameCanvas" class="hidden"></canvas><div class="camera-controls"><button class="primary" id="startMobileCamera" type="button">Start phone camera</button><button class="text-button" id="captureMobileFrame" type="button" disabled>Capture / process</button><button class="text-button" id="switchMobileCamera" type="button" disabled>Switch camera</button><button class="text-button" id="stopMobileCamera" type="button" disabled>Stop camera</button></div>'; laptopCameraControl.parentElement.append(mobileCameraPanel);
+function setLiveSource(source) { mobileCameraModeActive = source === 'mobile'; $('#laptopCameraModeButton').classList.toggle('active', !mobileCameraModeActive); $('#mobileCameraModeButton').classList.toggle('active', mobileCameraModeActive); laptopCameraControl.classList.toggle('hidden', mobileCameraModeActive); $('#liveStream').classList.toggle('hidden', mobileCameraModeActive); mobileCameraPanel.classList.toggle('hidden', !mobileCameraModeActive); if (mobileCameraModeActive) { stopCamera(); } else { stopMobileCamera(); } }
+function mobileCameraError(error) { const messages = { NotAllowedError: 'Camera permission was denied. Please allow camera access in your browser settings.', NotFoundError: 'No camera was found on this device.', NotReadableError: 'The camera is already in use by another application.', OverconstrainedError: 'The requested camera is unavailable. Try switching cameras.', SecurityError: 'Camera access was blocked by browser security settings.' }; return messages[error.name] || `Unable to access the phone camera: ${error.message || 'unknown camera error'}`; }
+async function openMobileStream() { if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(location.hostname)) throw new Error('Phone camera access requires HTTPS. Open the VNPR site using an HTTPS address.'); if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('This browser does not support camera access. Use current Chrome or Safari.'); mobileMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: mobileFacingMode }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }); const video = $('#mobileVideo'); video.srcObject = mobileMediaStream; await video.play(); const settings = mobileMediaStream.getVideoTracks()[0].getSettings(); $('#cameraStatus').textContent = `Phone camera active (${settings.width || video.videoWidth}x${settings.height || video.videoHeight})`; $('#startMobileCamera').disabled = true; $('#captureMobileFrame').disabled = false; $('#switchMobileCamera').disabled = false; $('#stopMobileCamera').disabled = false; mobileFrameTimer = window.setInterval(() => sendMobileFrame(false), MOBILE_PROCESS_INTERVAL); }
+async function startMobileCamera() { try { $('#cameraStatus').textContent = 'Requesting phone camera permission...'; await request('/api/v1/mobile/live/start', { method: 'POST' }); await openMobileStream(); } catch (error) { if (mobileMediaStream) mobileMediaStream.getTracks().forEach(track => track.stop()); mobileMediaStream = null; await request('/api/v1/mobile/live/stop', { method: 'POST' }).catch(() => {}); $('#cameraStatus').textContent = error.name ? mobileCameraError(error) : error.message; } }
+function stopMobileCamera() { if (mobileFrameTimer) { clearInterval(mobileFrameTimer); mobileFrameTimer = null; } if (mobileMediaStream) mobileMediaStream.getTracks().forEach(track => track.stop()); mobileMediaStream = null; const video = $('#mobileVideo'); if (video) video.srcObject = null; if ($('#startMobileCamera')) $('#startMobileCamera').disabled = false; if ($('#captureMobileFrame')) $('#captureMobileFrame').disabled = true; if ($('#switchMobileCamera')) $('#switchMobileCamera').disabled = true; if ($('#stopMobileCamera')) $('#stopMobileCamera').disabled = true; fetch('/api/v1/mobile/live/stop', { method: 'POST' }).catch(() => {}); if (mobileCameraModeActive) $('#cameraStatus').textContent = 'Phone camera is off'; }
+async function switchMobileCamera() { if (!mobileMediaStream) return; const wasRunning = true; stopMobileCamera(); mobileFacingMode = mobileFacingMode === 'environment' ? 'user' : 'environment'; if (wasRunning) await startMobileCamera(); }
+function sendMobileFrame(force) { const video = $('#mobileVideo'); if (!mobileMediaStream || mobileFrameInFlight || video.readyState < 2 || (!force && video.paused)) return; mobileFrameInFlight = true; const canvas = $('#mobileFrameCanvas'); const scale = Math.min(1, 1280 / video.videoWidth); canvas.width = Math.max(1, Math.round(video.videoWidth * scale)); canvas.height = Math.max(1, Math.round(video.videoHeight * scale)); canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); canvas.toBlob(async blob => { if (!blob) { mobileFrameInFlight = false; return; } try { const body = new FormData(); body.append('file', blob, 'mobile-camera.jpg'); const response = await fetch('/api/v1/mobile/live/frame', { method: 'POST', body }); if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.detail || `Frame upload failed (${response.status})`); } $('#cameraStatus').textContent = 'Phone camera active - sending newest frame'; } catch (error) { $('#cameraStatus').textContent = error.message || 'Mobile camera connection lost.'; } finally { mobileFrameInFlight = false; } }, 'image/jpeg', 0.65); }
+function drawMobileBoxes(tracked, data) { const video = $('#mobileVideo'); const canvas = $('#mobileOverlayCanvas'); if (!canvas || !video.videoWidth || !video.videoHeight) return; const source = data.actual_camera_resolution || {}; const sourceWidth = Number(source.width) || video.videoWidth; const sourceHeight = Number(source.height) || video.videoHeight; const bounds = video.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; canvas.width = Math.round(bounds.width * ratio); canvas.height = Math.round(bounds.height * ratio); canvas.style.width = `${bounds.width}px`; canvas.style.height = `${bounds.height}px`; const context = canvas.getContext('2d'); context.setTransform(ratio, 0, 0, ratio, 0, 0); context.clearRect(0, 0, bounds.width, bounds.height); context.lineWidth = 3; context.font = '700 12px Arial'; tracked.forEach(item => { if (!Array.isArray(item.bbox) || item.bbox.length < 4) return; const scaleX = bounds.width / sourceWidth; const scaleY = bounds.height / sourceHeight; const x = item.bbox[0] * scaleX; const y = item.bbox[1] * scaleY; const width = (item.bbox[2] - item.bbox[0]) * scaleX; const height = (item.bbox[3] - item.bbox[1]) * scaleY; context.strokeStyle = '#66d9a8'; context.strokeRect(x, y, width, height); context.fillStyle = '#66d9a8'; context.fillRect(x, Math.max(0, y - 22), 100, 22); context.fillStyle = '#123d40'; context.fillText(item.plate || 'Reading...', x + 7, Math.max(15, y - 7)); }); }
+async function refreshMobileLiveStatus() { try { const data = await request('/api/v1/mobile/live/status'); const tracked = Array.isArray(data.tracked_vehicles) ? data.tracked_vehicles : []; drawMobileBoxes(tracked, data); $('#liveVehicleCount').textContent = data.track_count ?? tracked.length; $('#livePlateCount').textContent = tracked.filter(item => item.plate && item.plate !== 'Reading...').length; if (!tracked.length) { $('#liveTracksBody').innerHTML = '<tr><td colspan="4" class="empty">No vehicles detected yet.</td></tr>'; $('#liveTrackDetails').classList.add('hidden'); return; } $('#liveTracksBody').innerHTML = tracked.map(item => { const confidence = Number(item.ocr_confidence_percent || 0); const label = item.plate && item.plate !== 'Reading...' ? item.plate : 'Reading...'; return `<tr data-track-id="${item.track_id}" style="cursor:pointer;"><td>#${String(item.track_id).padStart(3,'0')}</td><td>${label}</td><td><div class="confidence-bar"><span style="width:${Math.min(100, Math.max(0, confidence))}%;"></span></div><div style="margin-top:4px;font-size:11px;color:var(--muted);">${confidence > 0 ? `${confidence.toFixed(0)}%` : '--'}</div></td><td>${item.status || 'Tracked'}</td></tr>`; }).join(''); $('#liveTracksBody').querySelectorAll('tr[data-track-id]').forEach(row => { row.onclick = () => { selectedLiveTrackId = Number(row.dataset.trackId); renderTrackDetails(tracked); }; }); renderTrackDetails(tracked); } catch (error) { if (mobileCameraModeActive) $('#cameraStatus').textContent = error.message; } }
+const laptopLiveStatus = refreshLiveStatus; refreshLiveStatus = async function() { return mobileCameraModeActive ? refreshMobileLiveStatus() : laptopLiveStatus(); };
+$('#laptopCameraModeButton').onclick = () => setLiveSource('laptop'); $('#mobileCameraModeButton').onclick = () => setLiveSource('mobile'); $('#startMobileCamera').onclick = startMobileCamera; $('#stopMobileCamera').onclick = stopMobileCamera; $('#captureMobileFrame').onclick = () => sendMobileFrame(true); $('#switchMobileCamera').onclick = switchMobileCamera;
+const originalRecognizeClick = $('#recognize').onclick;
+$('#recognize').onclick = async event => { $('#overviewView').classList.add('recognition-active'); resultContainer.classList.remove('hidden'); latestRecognitionData = null; rawResult.textContent = ''; setRecognitionMessage($('#file').files[0] ? 'Processing' : 'Choose an image first'); await originalRecognizeClick(event); if (!latestRecognitionData) setRecognitionMessage(rawResult.textContent || 'Recognition failed'); rawResult.textContent = ''; };
+setLiveSource('laptop'); setMode('image'); boot();
+setInterval(() => {
+  if ($('#dashboard').classList.contains('hidden')) return;
+  loadAlerts();
+  loadTraffic();
+  loadTrafficStats();
+  notifyNewTraffic();
+}, 18000);
+</script>
+</body>
+</html>
