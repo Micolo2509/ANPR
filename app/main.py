@@ -894,7 +894,7 @@ async def signup(request: Request) -> dict[str, object]:
     except sqlite3.IntegrityError as exc:
         raise HTTPException(status_code=409, detail="An admin with this email already exists") from exc
     response = JSONResponse({"admin": admin})
-    response.set_cookie("vnpr_session", create_session(admin["id"], settings.auth_secret, settings.session_days), httponly=True, samesite="lax", max_age=settings.session_days * 86400)
+    response.set_cookie("vnpr_session", create_session(admin["id"], settings.auth_secret, settings.session_days), httponly=True, samesite="lax", secure=True, max_age=settings.session_days * 86400)
     return response
 
 
@@ -905,7 +905,7 @@ async def login(request: Request) -> JSONResponse:
     if admin is None:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     response = JSONResponse({"admin": admin})
-    response.set_cookie("vnpr_session", create_session(admin["id"], settings.auth_secret, settings.session_days), httponly=True, samesite="lax", max_age=settings.session_days * 86400)
+    response.set_cookie("vnpr_session", create_session(admin["id"], settings.auth_secret, settings.session_days), httponly=True, samesite="lax", secure=True, max_age=settings.session_days * 86400)
     return response
 
 
