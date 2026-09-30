@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import cv2
 import numpy as np
 
@@ -338,6 +340,109 @@ def test_signup_returns_json_errors():
     duplicate = client.post("/api/v1/auth/signup", json={"name": "Signup Test", "email": email, "password": "securepass123"})
     assert duplicate.status_code == 409
     assert duplicate.json()["detail"] == "An admin with this email already exists"
+
+
+def test_signup_session_survives_recreated_application_state(tmp_path, monkeypatch):
+    import app.main as main
+
+    database_path = tmp_path / "persistent" / "auth.sqlite3"
+    test_settings = replace(main.settings, database_path=database_path, auth_secret="session-test-secret")
+    monkeypatch.setattr(main, "settings", test_settings)
+    monkeypatch.setattr(main, "admins", AdminStore(database_path))
+
+    client = TestClient(main.app, base_url="https://testserver")
+    signup = client.post(
+        "/api/v1/auth/signup",
+        json={"name": "Restart Admin", "email": "restart@example.com", "password": "securepass123"},
+    )
+    assert signup.status_code == 200
+
+    monkeypatch.setattr(main, "settings", replace(test_settings))
+    monkeypatch.setattr(main, "admins", AdminStore(database_path))
+
+    current = client.get("/api/v1/auth/me")
+    assert current.status_code == 200
+    assert current.json()["admin"]["email"] == "restart@example.com"
+
+
+def test_signup_session_protects_endpoint(tmp_path, monkeypatch):
+    import app.main as main
+
+    database_path = tmp_path / "signup.sqlite3"
+    test_settings = replace(main.settings, database_path=database_path, auth_secret="signup-secret")
+    monkeypatch.setattr(main, "settings", test_settings)
+    monkeypatch.setattr(main, "admins", AdminStore(database_path))
+    client = TestClient(main.app, base_url="https://testserver")
+
+    response = client.post(
+        "/api/v1/auth/signup",
+        json={"name": "Signup Admin", "email": "signup-session@example.com", "password": "securepass123"},
+    )
+
+    assert response.status_code == 200
+    assert client.get("/api/v1/auth/me").status_code == 200
+
+
+def test_login_session_protects_endpoint(tmp_path, monkeypatch):
+    import app.main as main
+
+    database_path = tmp_path / "login.sqlite3"
+    store = AdminStore(database_path)
+    store.create("Login Admin", "login-session@example.com", "securepass123")
+    test_settings = replace(main.settings, database_path=database_path, auth_secret="login-secret")
+    monkeypatch.setattr(main, "settings", test_settings)
+    monkeypatch.setattr(main, "admins", AdminStore(database_path))
+    client = TestClient(main.app, base_url="https://testserver")
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "login-session@example.com", "password": "securepass123"},
+    )
+
+    assert response.status_code == 200
+    assert client.get("/api/v1/auth/me").status_code == 200
+
+
+def test_signed_session_survives_admin_store_loss(tmp_path, monkeypatch):
+    import app.main as main
+
+    database_path = tmp_path / "lost.sqlite3"
+    test_settings = replace(main.settings, database_path=database_path, auth_secret="loss-secret")
+    monkeypatch.setattr(main, "settings", test_settings)
+    monkeypatch.setattr(main, "admins", AdminStore(database_path))
+    client = TestClient(main.app, base_url="https://testserver")
+    signup = client.post(
+        "/api/v1/auth/signup",
+        json={"name": "Lost DB Admin", "email": "lost-db@example.com", "password": "securepass123"},
+    )
+    assert signup.status_code == 200
+
+    class UnavailableAdminStore:
+        def get(self, admin_id):
+            return None
+
+    monkeypatch.setattr(main, "admins", UnavailableAdminStore())
+
+    current = client.get("/api/v1/auth/me")
+    assert current.status_code == 200
+    assert current.json()["admin"]["email"] == "lost-db@example.com"
+
+
+def test_signed_session_rejects_tampering_and_expiry(tmp_path, monkeypatch):
+    import app.main as main
+
+    database_path = tmp_path / "invalid.sqlite3"
+    test_settings = replace(main.settings, database_path=database_path, auth_secret="invalid-secret")
+    monkeypatch.setattr(main, "settings", test_settings)
+    monkeypatch.setattr(main, "admins", AdminStore(database_path))
+    client = TestClient(main.app, base_url="https://testserver")
+    admin = {"id": 99, "name": "Signed Admin", "email": "signed@example.com"}
+
+    tampered = create_session(admin["id"], test_settings.auth_secret, 1, admin) + "x"
+    expired = create_session(admin["id"], test_settings.auth_secret, -1, admin)
+
+    assert client.get("/api/v1/auth/me", cookies={"vnpr_session": tampered}).status_code == 401
+    assert client.get("/api/v1/auth/me", cookies={"vnpr_session": expired}).status_code == 401
 
 
 def test_live_tracker_prefers_repeated_high_confidence_plate():

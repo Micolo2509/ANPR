@@ -27,6 +27,16 @@ def _default_plate_model_path() -> Path:
     return (PROJECT_ROOT / "runs" / "detect" / "runs" / "detect" / "nigerian_license_plate-4" / "weights" / "best.pt").resolve()
 
 
+def _database_path() -> Path:
+    raw_path = os.getenv("DATABASE_PATH")
+    if not raw_path:
+        return (PROJECT_ROOT / "data" / "vnpr.sqlite3").resolve()
+    candidate = Path(raw_path)
+    if not candidate.is_absolute():
+        candidate = PROJECT_ROOT / candidate
+    return candidate.resolve()
+
+
 def _vehicle_model_path() -> Path | None:
     configured_path = os.getenv("VEHICLE_MODEL_PATH")
     if configured_path:
@@ -42,7 +52,7 @@ def _vehicle_model_path() -> Path | None:
 @dataclass(frozen=True)
 class Settings:
     model_path: Path = _resolve_path(os.getenv("YOLO_MODEL_PATH"), _default_plate_model_path())
-    database_path: Path = _resolve_path(os.getenv("DATABASE_PATH"), PROJECT_ROOT / "data" / "vnpr.sqlite3")
+    database_path: Path = _database_path()
     vehicle_model_path: Path | None = _vehicle_model_path()
     detection_confidence: float = float(os.getenv("YOLO_CONFIDENCE", "0.35"))
     detection_iou: float = float(os.getenv("YOLO_IOU", "0.45"))
