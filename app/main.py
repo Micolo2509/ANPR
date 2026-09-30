@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from .auth import create_session, require_admin
 from .config import settings
 from .database import AdminStore, HistoryStore, PersistentVehicleStore, PlateRegistryStore, VehicleAlertStore, VehicleObligationStore, VehicleStatusStore
+from .diagnostics import log_phase
 from .detector import YOLOPlateDetector
 from .live_tracker import LiveVehicleTracker
 from .normalization import is_plausible_nigerian_plate, normalize_plate_text
@@ -513,6 +514,7 @@ def health() -> dict[str, object]:
 
 @app.post("/api/v1/recognize")
 async def recognize(request: Request, file: UploadFile = File(...), debug: bool = False) -> dict[str, object]:
+    log_phase(logger, "recognition_start")
     require_admin(request, admins, settings.auth_secret)
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=415, detail="Upload an image file")
@@ -521,6 +523,7 @@ async def recognize(request: Request, file: UploadFile = File(...), debug: bool 
         raise HTTPException(status_code=413, detail="Image exceeds configured size limit")
     try:
         image = _decode_image(payload)
+        log_phase(logger, "image_decoded", width=int(image.shape[1]), height=int(image.shape[0]))
         results = pipeline.recognize(image, debug=debug)
         valid_results = [
             result
@@ -566,6 +569,7 @@ async def recognize(request: Request, file: UploadFile = File(...), debug: bool 
                 "bbox": results[0].bbox.to_dict() if results else None,
                 "detection": pipeline.last_detection_diagnostics,
             }
+        log_phase(logger, "recognition_complete")
         return response
     except (FileNotFoundError, RuntimeError, ValueError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

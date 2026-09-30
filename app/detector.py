@@ -1,9 +1,15 @@
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 from typing import Any
 
 import cv2
 import numpy as np
+
+from .diagnostics import log_phase
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -29,6 +35,7 @@ class YOLOPlateDetector:
 
     def _load(self) -> Any:
         if self._model is None:
+            log_phase(logger, "before_yolo_load")
             try:
                 from ultralytics import YOLO
             except ImportError as exc:
@@ -36,6 +43,7 @@ class YOLOPlateDetector:
             if not self.model_path.exists():
                 raise FileNotFoundError(f"YOLO model not found: {self.model_path}")
             self._model = YOLO(str(self.model_path))
+            log_phase(logger, "after_yolo_load")
         return self._model
 
     def _class_name(self, class_id: int) -> str:
@@ -47,7 +55,10 @@ class YOLOPlateDetector:
         return str(class_id)
 
     def _run_yolo(self, image: Any, confidence: float, imgsz: int, offset: tuple[int, int] = (0, 0)) -> list[Detection]:
-        results = self._load()(image, conf=confidence, iou=self.iou, imgsz=imgsz, verbose=False)
+        model = self._load()
+        log_phase(logger, "before_yolo_inference")
+        results = model(image, conf=confidence, iou=self.iou, imgsz=imgsz, verbose=False)
+        log_phase(logger, "after_yolo_inference")
         detections: list[Detection] = []
         offset_x, offset_y = offset
         for result in results:

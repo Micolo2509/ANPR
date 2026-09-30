@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any
 
 import cv2
 import numpy as np
+
+from .diagnostics import log_phase
 
 from .normalization import (
     compact_plate_text,
@@ -13,6 +16,9 @@ from .normalization import (
     normalize_plate_text,
     validate_nigerian_plate,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class OCRReader:
@@ -62,10 +68,12 @@ class OCRReader:
                     "Install easyocr to use OCR"
                 ) from exc
 
+            log_phase(logger, "before_easyocr_load")
             self._reader = easyocr.Reader(
                 self.languages,
                 gpu=self.gpu
             )
+            log_phase(logger, "after_easyocr_load")
 
             print(
                 f"[OCR TEST] OCR initialized = YES; "
